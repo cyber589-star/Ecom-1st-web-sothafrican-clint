@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase-server'
+import { getSupabaseAdmin } from '@/lib/supabase-server'
 
 const CATEGORIES = [
   { id: 'phone-accessories', name: 'Phone Accessories', slug: 'phone-accessories', image: 'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=600&q=80', description: 'Cases, chargers, screen protectors and more for your devices', productCount: 0 },
@@ -16,10 +16,10 @@ const CATEGORIES = [
 
 export async function GET() {
   try {
-    const { error: delErr } = await supabaseAdmin.from('categories').delete().neq('id', 'none')
+    const { error: delErr } = await getSupabaseAdmin().from('categories').delete().neq('id', 'none')
     if (delErr) return NextResponse.json({ error: 'Delete failed: ' + delErr.message }, { status: 500 })
 
-    const { error: insErr } = await supabaseAdmin.from('categories').insert(CATEGORIES)
+    const { error: insErr } = await getSupabaseAdmin().from('categories').insert(CATEGORIES as any)
     if (insErr) return NextResponse.json({ error: 'Insert failed: ' + insErr.message }, { status: 500 })
 
     return NextResponse.json({ success: true, count: CATEGORIES.length })

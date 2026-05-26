@@ -1,15 +1,39 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+function getSupabaseUrl() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  if (!url) throw new Error('Missing env: NEXT_PUBLIC_SUPABASE_URL')
+  return url
+}
 
-// Anon key client — works for public reads (RLS allows SELECT for everyone)
-export const supabaseServer = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: { autoRefreshToken: false, persistSession: false },
-})
+function getSupabaseAnonKey() {
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!key) throw new Error('Missing env: NEXT_PUBLIC_SUPABASE_ANON_KEY')
+  return key
+}
 
-// Service role client — for admin writes that bypass RLS
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: { autoRefreshToken: false, persistSession: false },
-})
+function getServiceRoleKey() {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!key) throw new Error('Missing env: SUPABASE_SERVICE_ROLE_KEY')
+  return key
+}
+
+let _supabaseServer: any = null
+export function getSupabaseServer() {
+  if (!_supabaseServer) {
+    _supabaseServer = createClient(getSupabaseUrl(), getSupabaseAnonKey(), {
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
+  }
+  return _supabaseServer
+}
+
+let _supabaseAdmin: any = null
+export function getSupabaseAdmin() {
+  if (!_supabaseAdmin) {
+    _supabaseAdmin = createClient(getSupabaseUrl(), getServiceRoleKey(), {
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
+  }
+  return _supabaseAdmin
+}

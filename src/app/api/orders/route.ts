@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { listOrders, createOrder } from '@/lib/supabase-service'
-import { supabaseServer } from '@/lib/supabase-server'
+import { getSupabaseServer } from '@/lib/supabase-server'
 
 export async function GET() {
   try {
-    const { data, error } = await supabaseServer.from('orders').select('*').neq('status', 'Deleted').order('createdAt', { ascending: false })
+    const { data, error } = await getSupabaseServer().from('orders').select('*').neq('status', 'Deleted').order('createdAt', { ascending: false })
     if (error) throw error
     return NextResponse.json(data || [])
   }
