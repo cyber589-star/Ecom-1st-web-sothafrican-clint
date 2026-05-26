@@ -29,9 +29,13 @@ export default function AdminLoginPage() {
         })
         const data = await res.json()
         if (!res.ok) { toast.error(data.error || 'Failed to create admin'); return }
-        toast.success('Admin created! Now sign in.')
+        if (data.needsConfirm) {
+          toast.success(data.msg || 'Account created! Check your email to confirm, then sign in.')
+          return
+        }
+        toast.success('Admin created! You can now sign in.')
         setIsSignup(false)
-      } catch { toast.error('Failed to create admin') }
+      } catch { toast.error('Network error — check your connection or Supabase env vars') }
       finally { setBusy(false) }
       return
     }
