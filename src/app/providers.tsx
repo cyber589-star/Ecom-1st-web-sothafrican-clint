@@ -21,14 +21,17 @@ export function Providers({ children }: { children: ReactNode }) {
           {children}
           {!isAdmin && <Footer />}
           <Toaster
-            position="bottom-right"
+            position="top-center"
             toastOptions={{
+              duration: 3000,
               style: {
                 background: '#fff',
                 color: '#111827',
                 border: '1px solid #e5e7eb',
                 borderRadius: '12px',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                fontSize: '14px',
+                maxWidth: '90vw',
               },
             }}
           />

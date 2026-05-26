@@ -21,10 +21,16 @@
   body {
     @apply bg-background text-foreground font-sans overflow-x-hidden;
     font-family: var(--font-sans), system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { @apply bg-gray-100; }
   ::-webkit-scrollbar-thumb { @apply bg-primary/40 rounded-full; }
+
+  img { @apply max-w-full h-auto; }
+  button { @apply cursor-pointer; }
+  input, select, textarea { @apply appearance-none; }
 }
 
 @layer utilities {
@@ -58,4 +64,31 @@
   .shadow-glow-lg {
     box-shadow: 0 8px 40px rgba(184, 134, 11, 0.12);
   }
+}
+
+@layer utilities {
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
+  }
+  .touch-target-sm {
+    @apply min-h-[36px] min-w-[36px] flex items-center justify-center;
+  }
+  .container-mobile {
+    @apply max-w-[430px] mx-auto;
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@media (max-width: 430px) {
+  .container-mobile { @apply px-3; }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .tablet\:grid-cols-2 { @apply grid-cols-2; }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .touch-hover\:bg-amber-50:active { @apply bg-amber-50; }
 }

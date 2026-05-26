@@ -17,19 +17,19 @@ export default function OrderSuccessPage() {
   const paypalEmail = localStorage.getItem('paypal_email') || 'makharietja@gmail.com'
 
   return (
-    <main className="min-h-screen bg-white pt-24 pb-16 flex items-center justify-center">
+    <main className="min-h-screen bg-white pt-20 sm:pt-24 pb-12 sm:pb-16 flex items-center justify-center">
       <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center max-w-md mx-auto px-4">
-        <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4">
-          <CheckCircle size={32} className="text-green-600" />
+        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4">
+          <CheckCircle size={28} className="text-green-600" />
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">Order Successful!</h1>
-        <p className="text-gray-500 mb-1">Thank you for your purchase.</p>
-        {order && <p className="text-sm text-gray-400 mb-4">Order ID: {order.id}</p>}
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">Order Successful!</h1>
+        <p className="text-gray-500 text-sm mb-1">Thank you for your purchase.</p>
+        {order && <p className="text-xs sm:text-sm text-gray-400 mb-4">Order ID: {order.id}</p>}
 
         {isPayPal && (
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 text-left">
             <div className="flex items-center gap-2 mb-2">
-              <CreditCard size={16} className="text-blue-700" />
+              <CreditCard size={16} className="text-blue-700 shrink-0" />
               <p className="text-sm font-semibold text-blue-900">PayPal Payment Instructions</p>
             </div>
             <p className="text-xs text-blue-700 mb-1">Send payment to:</p>
@@ -42,8 +42,8 @@ export default function OrderSuccessPage() {
           <p className="text-sm text-gray-500 mb-6">Pay on delivery — no upfront payment needed.</p>
         )}
 
-        <Link href="/products" className="inline-flex items-center justify-center gap-2 bg-gray-900 text-white px-8 py-3 rounded-full font-semibold hover:bg-gray-800 transition-all">
-          <ShoppingBag size={18} /> Continue Shopping
+        <Link href="/products" className="inline-flex items-center justify-center gap-2 bg-gray-900 text-white px-6 sm:px-8 py-3 rounded-full font-semibold hover:bg-gray-800 transition-all text-sm">
+          <ShoppingBag size={16} /> Continue Shopping
         </Link>
       </motion.div>
     </main>

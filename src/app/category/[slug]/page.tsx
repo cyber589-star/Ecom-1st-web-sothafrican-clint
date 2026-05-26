@@ -28,42 +28,51 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
 
   useEffect(() => { fetchProductsByCategory(slug).then(setCategoryProducts).catch(() => {}).finally(() => setLoading(false)) }, [slug])
 
+  const sorted = [...categoryProducts].sort((a, b) => {
+    switch (sortBy) {
+      case 'price-low': return a.price - b.price
+      case 'price-high': return b.price - a.price
+      case 'rating': return b.rating - a.rating
+      default: return b.featured ? 1 : -1
+    }
+  })
+
   const cat = categoryMap[slug]
 
   if (!cat) {
-    return <main className="min-h-screen bg-white pt-24 flex items-center justify-center"><div className="text-center"><h1 className="text-2xl text-gray-900 mb-4">Category Not Found</h1><a href="/products" className="text-amber-700">Back to Shop</a></div></main>
+    return <main className="min-h-screen bg-white pt-20 sm:pt-24 flex items-center justify-center"><div className="text-center px-4"><h1 className="text-xl sm:text-2xl text-gray-900 mb-4">Category Not Found</h1><a href="/products" className="text-amber-700">Back to Shop</a></div></main>
   }
 
   return (
     <main className="min-h-screen bg-white">
-      <div className="relative h-[35vh] min-h-[250px] overflow-hidden bg-gray-50">
-        <Image src={cat.image} alt={cat.name} fill className="object-cover" priority />
+      <div className="relative h-[25vh] sm:h-[30vh] lg:h-[35vh] min-h-[180px] sm:min-h-[250px] overflow-hidden bg-gray-50">
+        <Image src={cat.image} alt={cat.name} fill className="object-cover" priority sizes="100vw" />
         <div className="absolute inset-0 bg-gradient-to-t from-white via-white/50 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 p-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>
-            <p className="text-xs uppercase tracking-widest text-amber-600 mb-1">Category</p>
-            <h1 className="text-4xl font-bold text-gray-900 mb-1">{cat.name}</h1>
-            <p className="text-gray-600 max-w-xl">{cat.description}</p>
-            <p className="text-sm text-gray-400 mt-1">{categoryProducts.length} Products</p>
+            <p className="text-[9px] sm:text-xs uppercase tracking-widest text-amber-600 mb-0.5 sm:mb-1">Category</p>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-0.5 sm:mb-1">{cat.name}</h1>
+            <p className="text-gray-600 max-w-xl text-xs sm:text-sm sm:text-base">{cat.description}</p>
+            <p className="text-[10px] sm:text-sm text-gray-400 mt-0.5 sm:mt-1">{categoryProducts.length} Products</p>
           </motion.div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="flex justify-end mb-6">
           <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}
-            className="bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-4 text-sm text-gray-900 focus:outline-none focus:border-amber-400">
-            <option value="featured">Featured</option>
+            className="bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-4 text-sm text-gray-900 focus:outline-none focus:border-amber-400 min-h-[44px] appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%3E%3Cpath%20d%3D%22M3%204.5l3%203%203-3%22%20fill%3D%22none%22%20stroke%3D%22%239CA3AF%22%20stroke-width%3D%221.5%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_12px_center] pr-8">
+            <option value="featured">Sort: Featured</option>
             <option value="price-low">Price: Low to High</option>
             <option value="price-high">Price: High to Low</option>
             <option value="rating">Highest Rated</option>
           </select>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-          {categoryProducts.map((product, i) => <ProductCard key={product.id} product={product} index={i} />)}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
+          {sorted.map((product, i) => <ProductCard key={product.id} product={product} index={i} />)}
         </div>
-        {categoryProducts.length === 0 && <div className="text-center py-20"><p className="text-gray-400">No products in this category yet.</p></div>}
+        {sorted.length === 0 && <div className="text-center py-20"><p className="text-gray-400">No products in this category yet.</p></div>}
       </div>
     </main>
   )

@@ -42,18 +42,18 @@ export default function AdminLoginPage() {
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Admin Email"
-                className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400 transition-colors" required />
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg py-3 pl-9 pr-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400 transition-colors min-h-[48px]" required />
             </div>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
               <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password"
-                className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-9 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400 transition-colors" required />
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg py-3 pl-9 pr-9 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400 transition-colors min-h-[48px]" required />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                 {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
             </div>
             <button type="submit" disabled={busy}
-              className="w-full bg-amber-600 hover:bg-amber-700 disabled:bg-amber-300 text-white py-2.5 rounded-lg text-xs font-semibold transition-all shadow-sm flex items-center justify-center gap-2">
+              className="w-full bg-amber-600 hover:bg-amber-700 disabled:bg-amber-300 text-white py-3 rounded-lg text-sm font-semibold transition-all shadow-sm flex items-center justify-center gap-2 min-h-[48px]">
               {busy ? 'Please wait...' : <><LogIn size={14} /> Sign In</>}
             </button>
           </form>
