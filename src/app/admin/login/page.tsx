@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Lock, Mail, Eye, EyeOff } from 'lucide-react'
+import { Lock, Mail, Eye, EyeOff, UserPlus, LogIn } from 'lucide-react'
 import { useAdmin } from '@/context/AdminContext'
 import toast from 'react-hot-toast'
 
@@ -11,18 +11,39 @@ export default function AdminLoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [isSignup, setIsSignup] = useState(false)
+  const [busy, setBusy] = useState(false)
   const { login } = useAdmin()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setBusy(true)
+
+    if (isSignup) {
+      try {
+        const res = await fetch('/api/create-admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        })
+        const data = await res.json()
+        if (!res.ok) { toast.error(data.error || 'Failed to create admin'); return }
+        toast.success('Admin created! Now sign in.')
+        setIsSignup(false)
+      } catch { toast.error('Failed to create admin') }
+      finally { setBusy(false) }
+      return
+    }
+
     const success = await login(email, password)
     if (success) {
       toast.success('Welcome back, Admin!')
       router.push('/admin')
     } else {
-      toast.error('Invalid credentials')
+      toast.error('Invalid credentials. Try "Create Admin" if you haven\'t set up an account yet.')
     }
+    setBusy(false)
   }
 
   return (
@@ -31,8 +52,10 @@ export default function AdminLoginPage() {
         <div className="rounded-xl bg-white border border-gray-200 p-6 shadow-sm">
           <div className="text-center mb-6">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-white font-bold text-sm mx-auto mb-3">P</div>
-            <h1 className="text-base font-semibold text-gray-900">Admin Login</h1>
-            <p className="text-xs text-gray-500 mt-1">Sign in to manage your store</p>
+            <h1 className="text-base font-semibold text-gray-900">{isSignup ? 'Create Admin' : 'Admin Login'}</h1>
+            <p className="text-xs text-gray-500 mt-1">
+              {isSignup ? 'Set up your admin account (first time only)' : 'Sign in to manage your store'}
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3">
@@ -43,16 +66,24 @@ export default function AdminLoginPage() {
             </div>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
-              <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password"
-                className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-9 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400 transition-colors" required />
+              <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={isSignup ? 'Password (min 6 chars)' : 'Password'}
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-9 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400 transition-colors" required minLength={isSignup ? 6 : 1} />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                 {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
             </div>
-            <button type="submit" className="w-full bg-amber-600 hover:bg-amber-700 text-white py-2.5 rounded-lg text-xs font-semibold transition-all shadow-sm">
-              Sign In
+            <button type="submit" disabled={busy}
+              className="w-full bg-amber-600 hover:bg-amber-700 disabled:bg-amber-300 text-white py-2.5 rounded-lg text-xs font-semibold transition-all shadow-sm flex items-center justify-center gap-2">
+              {busy ? 'Please wait...' : isSignup ? <><UserPlus size={14} /> Create Admin</> : <><LogIn size={14} /> Sign In</>}
             </button>
           </form>
+
+          <div className="mt-4 pt-4 border-t border-gray-100 text-center">
+            <button onClick={() => { setIsSignup(!isSignup); setPassword('') }}
+              className="text-xs text-amber-700 hover:text-amber-600 transition-colors">
+              {isSignup ? 'Already have an account? Sign In' : 'First time? Create Admin Account'}
+            </button>
+          </div>
         </div>
       </motion.div>
     </main>
