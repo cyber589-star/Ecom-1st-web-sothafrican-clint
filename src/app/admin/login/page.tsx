@@ -28,14 +28,8 @@ export default function AdminLoginPage() {
           body: JSON.stringify({ email, password }),
         })
         const data = await res.json()
-        if (!res.ok) { toast.error(data.error || 'Failed to create admin'); return }
-        if (data.needsConfirm) {
-          toast.success(data.msg || 'Account created! Check your email to confirm, then sign in.')
-          return
-        }
-        toast.success('Admin created! You can now sign in.')
-        setIsSignup(false)
-      } catch { toast.error('Network error — check your connection or Supabase env vars') }
+        toast.error(data.error || 'Failed to create admin')
+      } catch { toast.error('Network error') }
       finally { setBusy(false) }
       return
     }
