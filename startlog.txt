@@ -1,0 +1,4 @@
+﻿Γû▓ Next.js 16.2.6
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.6:3000
+Γ£ô Ready in 353ms
