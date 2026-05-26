@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { supabase } from '@/lib/supabase'
+import { getSupabase } from '@/lib/supabase'
 import type { Session } from '@supabase/supabase-js'
 
 interface AdminContextType {
@@ -18,18 +18,19 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    getSupabase().auth.getSession().then((res: any) => {
+      const session = res.data?.session ?? null
       setSession(session)
       setLoading(false)
     })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } }: any = getSupabase().auth.onAuthStateChange((_event: any, session: any) => {
       setSession(session)
     })
     return () => subscription.unsubscribe()
   }, [])
 
   const login = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await getSupabase().auth.signInWithPassword({ email, password })
     if (error) return false
     localStorage.setItem('admin_auth', 'true')
     setSession(data.session)
@@ -37,7 +38,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   }
 
   const logout = async () => {
-    await supabase.auth.signOut()
+    await getSupabase().auth.signOut()
     localStorage.removeItem('admin_auth')
     setSession(null)
   }

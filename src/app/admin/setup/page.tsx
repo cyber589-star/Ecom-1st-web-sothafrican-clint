@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { getSupabase } from '@/lib/supabase'
 import { motion } from 'framer-motion'
 import { Trash2, Sparkles, CheckCircle, AlertCircle, Loader } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -37,7 +37,7 @@ export default function AdminSetupPage() {
 
     for (const [key, table] of Object.entries({ products: 'products', orders: 'orders', categories: 'categories' })) {
       try {
-        const { error } = await supabase.from(table).delete().neq('id', 'none')
+        const { error } = await getSupabase().from(table).delete().neq('id', 'none')
         if (error) { updateStep(key, 'error'); ok = false }
         else updateStep(key, 'done')
       } catch { updateStep(key, 'error'); ok = false }
@@ -53,11 +53,11 @@ export default function AdminSetupPage() {
     updateStep('seed', 'running')
 
     try {
-      const { error: delErr } = await supabase.from('categories').delete().neq('id', 'none')
+      const { error: delErr } = await getSupabase().from('categories').delete().neq('id', 'none')
       if (delErr) throw delErr
 
       const cats = CATEGORIES.map(c => ({ ...c, id: c.slug, productCount: 0 }))
-      const { error: insErr } = await supabase.from('categories').insert(cats)
+      const { error: insErr } = await getSupabase().from('categories').insert(cats)
       if (insErr) throw insErr
 
       updateStep('seed', 'done')

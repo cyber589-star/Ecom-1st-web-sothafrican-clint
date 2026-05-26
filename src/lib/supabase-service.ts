@@ -1,5 +1,5 @@
 import { getSupabaseAdmin, getSupabaseServer } from './supabase-server'
-import { supabase } from './supabase'
+import { getSupabase } from './supabase'
 
 function toSlug(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
@@ -130,22 +130,22 @@ export async function deleteImage(path: string, bucket = 'images') {
 
 // ─── Auth ────────────────────────────────────────────────
 export async function signIn(email: string, password: string) {
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+  const { data, error } = await getSupabase().auth.signInWithPassword({ email, password })
   if (error) throw error
   return data
 }
 
 export async function signOut() {
-  const { error } = await supabase.auth.signOut()
+  const { error } = await getSupabase().auth.signOut()
   if (error) throw error
 }
 
 export async function getSession() {
-  const { data } = await supabase.auth.getSession()
+  const { data } = await getSupabase().auth.getSession()
   return data.session
 }
 
 export async function getCurrentUser() {
-  const { data } = await supabase.auth.getUser()
+  const { data } = await getSupabase().auth.getUser()
   return data.user
 }

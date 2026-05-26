@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Plus, Edit, Trash2, X, FolderOpen } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { getSupabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 
 interface CatForm { name: string; slug: string; image: string; description: string }
@@ -28,7 +28,7 @@ export default function AdminCategoriesPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase.from('categories').delete().eq('id', id)
+      const { error } = await getSupabase().from('categories').delete().eq('id', id)
       if (error) throw error
       setCategoryList(prev => prev.filter(c => c.id !== id)); toast.success('Category deleted')
     }
@@ -42,8 +42,8 @@ export default function AdminCategoriesPage() {
     if (!form.name) { toast.error('Category name is required'); return }
     try {
       const { error } = editingId
-        ? await supabase.from('categories').update(form).eq('id', editingId)
-        : await supabase.from('categories').insert({ ...form, id: String(Date.now()) })
+        ? await getSupabase().from('categories').update(form).eq('id', editingId)
+        : await getSupabase().from('categories').insert({ ...form, id: String(Date.now()) })
       if (error) throw error
       toast.success(editingId ? 'Category updated' : 'Category added')
       setShowModal(false); load()
@@ -57,9 +57,9 @@ export default function AdminCategoriesPage() {
     try {
       const ext = file.name.split('.').pop()
       const path = `categories/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-      const { error } = await supabase.storage.from('images').upload(path, file, { cacheControl: '3600', upsert: false })
+      const { error } = await getSupabase().storage.from('images').upload(path, file, { cacheControl: '3600', upsert: false })
       if (error) throw error
-      const { data: urlData } = supabase.storage.from('images').getPublicUrl(path)
+      const { data: urlData } = getSupabase().storage.from('images').getPublicUrl(path)
       setForm({...form, image: urlData?.publicUrl || ''})
       toast.success('Image uploaded')
     } catch { toast.error('Upload failed') }

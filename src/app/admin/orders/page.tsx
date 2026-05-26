@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Eye, Package, Search, X, CreditCard, Truck, Trash2 } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { getSupabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 
 const PAYMENT_STATUSES = ['Pending', 'Paid', 'Failed', 'Cancelled']
@@ -17,7 +17,7 @@ export default function AdminOrdersPage() {
 
   const load = async () => {
     try {
-      const { data, error } = await supabase.from('orders').select('*').order('createdAt', { ascending: false })
+      const { data, error } = await getSupabase().from('orders').select('*').order('createdAt', { ascending: false })
       if (!error && data) setOrderList(data)
     } catch {}
     finally { setLoading(false) }
@@ -37,7 +37,7 @@ export default function AdminOrdersPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this order?')) return
     try {
-      const { error } = await supabase.from('orders').update({ status: 'Deleted', paymentStatus: 'Cancelled' }).eq('id', id)
+      const { error } = await getSupabase().from('orders').update({ status: 'Deleted', paymentStatus: 'Cancelled' }).eq('id', id)
       if (error) throw error
       toast.success('Order deleted')
       setSelectedOrder(null)
@@ -47,7 +47,7 @@ export default function AdminOrdersPage() {
 
   const updateOrderField = async (id: string, field: string, value: string) => {
     try {
-      const { error } = await supabase.from('orders').update({ [field]: value }).eq('id', id)
+      const { error } = await getSupabase().from('orders').update({ [field]: value }).eq('id', id)
       if (error) throw error
       toast.success(`${field} updated to ${value}`)
       load()

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Users, Search, Trash2 } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { getSupabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 
 export default function AdminCustomersPage() {
@@ -17,7 +17,7 @@ export default function AdminCustomersPage() {
   const handleClearAll = async () => {
     if (!confirm('Delete all orders? Customer data will reset to zero.')) return
     try {
-      const { error } = await supabase.from('orders').update({ status: 'Deleted', paymentStatus: 'Cancelled' }).neq('id', 'none')
+      const { error } = await getSupabase().from('orders').update({ status: 'Deleted', paymentStatus: 'Cancelled' }).neq('id', 'none')
       if (error) throw error
       toast.success('All customer data cleared')
       load()

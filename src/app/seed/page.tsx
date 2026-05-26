@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { getSupabase } from '@/lib/supabase'
 
 const CATEGORIES = [
   { id: 'phone-accessories', name: 'Phone Accessories', slug: 'phone-accessories', image: 'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=600&q=80', description: 'Cases, chargers, screen protectors and more for your devices', productCount: 0 },
@@ -21,10 +21,10 @@ export default function SeedPage() {
 
   useEffect(() => {
     (async () => {
-      const { error: delErr } = await supabase.from('categories').delete().neq('id', 'none')
+      const { error: delErr } = await getSupabase().from('categories').delete().neq('id', 'none')
       if (delErr) { setStatus('Delete failed: ' + delErr.message); return }
 
-      const { error: insErr } = await supabase.from('categories').insert(CATEGORIES)
+      const { error: insErr } = await getSupabase().from('categories').insert(CATEGORIES)
       if (insErr) { setStatus('Insert failed: ' + insErr.message); return }
 
       setStatus(`✅ ${CATEGORIES.length} categories created! You can close this page.`)

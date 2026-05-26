@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { Plus, Search, Edit, Trash2, X, Package } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { getSupabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 import { formatZAR } from '@/components/ui/PriceDisplay'
 
@@ -45,7 +45,7 @@ export default function AdminProductsPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase.from('products').delete().eq('id', id)
+      const { error } = await getSupabase().from('products').delete().eq('id', id)
       if (error) throw error
       setProductList(prev => prev.filter(p => p.id !== id)); toast.success('Product deleted')
     }
@@ -86,8 +86,8 @@ export default function AdminProductsPage() {
 
     try {
       const { error } = editingId
-        ? await supabase.from('products').update(payload).eq('id', editingId)
-        : await supabase.from('products').insert(payload)
+        ? await getSupabase().from('products').update(payload).eq('id', editingId)
+        : await getSupabase().from('products').insert(payload)
       if (error) throw error
       toast.success(editingId ? 'Product updated' : 'Product added')
       setShowModal(false); load()
@@ -101,9 +101,9 @@ export default function AdminProductsPage() {
     try {
       const ext = file.name.split('.').pop()
       const path = `products/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-      const { error } = await supabase.storage.from('images').upload(path, file, { cacheControl: '3600', upsert: false })
+      const { error } = await getSupabase().storage.from('images').upload(path, file, { cacheControl: '3600', upsert: false })
       if (error) throw error
-      const { data: urlData } = supabase.storage.from('images').getPublicUrl(path)
+      const { data: urlData } = getSupabase().storage.from('images').getPublicUrl(path)
       const publicUrl = urlData?.publicUrl || ''
       const currentImages = form.images ? form.images.split('\n').map(s => s.trim()).filter(Boolean) : []
       currentImages.push(publicUrl)

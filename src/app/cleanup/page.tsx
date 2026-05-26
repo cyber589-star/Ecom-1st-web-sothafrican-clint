@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { getSupabase } from '@/lib/supabase'
 
 export default function CleanupPage() {
   const [results, setResults] = useState<Record<string, string>>({})
@@ -12,7 +12,7 @@ export default function CleanupPage() {
       const res: Record<string, string> = {}
       for (const [label, table] of Object.entries({ Products: 'products', Categories: 'categories', Orders: 'orders' })) {
         try {
-          const { error } = await supabase.from(table).delete().neq('id', 'none')
+          const { error } = await getSupabase().from(table).delete().neq('id', 'none')
           res[label] = error ? `Failed: ${error.message}` : 'Cleared'
         } catch (e: any) { res[label] = `Error: ${e.message}` }
       }
