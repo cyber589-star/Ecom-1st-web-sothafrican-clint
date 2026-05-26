@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdmin } from '@/lib/supabase-server'
+import { createClient } from '@supabase/supabase-js'
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,15 +11,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })
     }
 
-    const { data, error } = await getSupabaseAdmin().auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-    })
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    if (!url || !key) {
+      return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 })
+    }
+
+    const supabase = createClient(url, key)
+    const { data, error } = await supabase.auth.signUp({ email, password })
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
     return NextResponse.json({ success: true, id: data.user?.id })
-  } catch {
-    return NextResponse.json({ error: 'Failed to create admin' }, { status: 500 })
+  } catch (e: any) {
+    return NextResponse.json({ error: e?.message || 'Failed to create admin' }, { status: 500 })
   }
 }

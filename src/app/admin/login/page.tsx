@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Lock, Mail, Eye, EyeOff, UserPlus, LogIn } from 'lucide-react'
 import { useAdmin } from '@/context/AdminContext'
-import { getSupabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 
 export default function AdminLoginPage() {
@@ -23,8 +22,13 @@ export default function AdminLoginPage() {
 
     if (isSignup) {
       try {
-        const { error } = await getSupabase().auth.signUp({ email, password })
-        if (error) { toast.error(error.message); return }
+        const res = await fetch('/api/create-admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        })
+        const data = await res.json()
+        if (!res.ok) { toast.error(data.error || 'Failed to create admin'); return }
         toast.success('Admin created! Now sign in.')
         setIsSignup(false)
       } catch { toast.error('Failed to create admin') }
