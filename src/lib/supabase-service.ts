@@ -98,7 +98,7 @@ export async function getOrder(id: string) {
 }
 
 export async function createOrder(order: any) {
-  const { data, error } = await getSupabaseServer().from('orders').insert(order).select().single()
+  const { data, error } = await getSupabaseAdmin().from('orders').insert(order).select().single()
   if (error) throw error
   return data
 }
@@ -110,7 +110,7 @@ export async function updateOrder(id: string, updates: any) {
 }
 
 export async function deleteOrder(id: string) {
-  const { error } = await getSupabaseServer().from('orders').delete().eq('id', id)
+  const { error } = await getSupabaseAdmin().from('orders').delete().eq('id', id)
   if (error) throw error
 }
 

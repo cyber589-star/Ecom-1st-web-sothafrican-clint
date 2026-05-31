@@ -5,7 +5,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { ArrowRight, Sparkles, Package } from 'lucide-react'
-import HeroSection from '@/components/HeroSection'
+import dynamic from 'next/dynamic'
+const HeroSection = dynamic(() => import('@/components/HeroSection'), { ssr: true })
 import ProductCard from '@/components/products/ProductCard'
 import { fetchFeaturedProducts, fetchNewArrivals, fetchProducts } from '@/data/products'
 import { fetchCategories } from '@/data/categories'
@@ -119,7 +120,7 @@ export default function HomePage() {
       </section>
 
       <section className="relative h-[300px] sm:h-[350px] lg:h-[400px] overflow-hidden">
-        <Image src="https://images.unsplash.com/photo-1445205170230-053b83016050?w=1920&q=80" alt="" fill className="object-cover" sizes="100vw" />
+        <Image src="https://images.unsplash.com/photo-1445205170230-053b83016050?w=1920&q=80" alt="" fill className="object-cover" sizes="100vw" loading="lazy" />
         <div className="absolute inset-0 bg-gradient-to-r from-white/90 via-white/70 to-transparent" />
         <div className="absolute inset-0 flex items-center">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">

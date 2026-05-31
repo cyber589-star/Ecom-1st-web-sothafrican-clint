@@ -4,7 +4,7 @@ import { listOrders, createOrder, updateOrder, deleteOrder } from '@/lib/supabas
 export async function GET() {
   try {
     const orders = await listOrders()
-    return NextResponse.json(orders)
+    return NextResponse.json(orders, { headers: { 'Cache-Control': 'no-store, max-age=0' } })
   } catch (e: any) {
     console.error('GET /api/orders error:', e?.message || e)
     return NextResponse.json({ error: e?.message || 'Failed to fetch orders' }, { status: 500 })

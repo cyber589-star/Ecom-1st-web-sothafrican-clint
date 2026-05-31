@@ -4,7 +4,7 @@ import { listCategories, createCategory } from '@/lib/supabase-service'
 export async function GET() {
   try {
     const categories = await listCategories()
-    return NextResponse.json(categories)
+    return NextResponse.json(categories, { headers: { 'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=60' } })
   } catch (e: any) {
     console.error('GET /api/categories error:', e?.message || e)
     return NextResponse.json({ error: e?.message || 'Failed to fetch categories' }, { status: 500 })

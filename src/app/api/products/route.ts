@@ -8,15 +8,15 @@ export async function GET(req: NextRequest) {
     if (slug) {
       const p = await getProductBySlug(slug)
       if (!p) return NextResponse.json({ error: 'Product not found', slug }, { status: 404 })
-      return NextResponse.json(p)
+      return NextResponse.json(p, { headers: { 'Cache-Control': 'public, max-age=30, s-maxage=60' } })
     }
     const search = searchParams.get('search')
     if (search) {
       const results = await searchProductsAPI(search)
-      return NextResponse.json(results)
+      return NextResponse.json(results, { headers: { 'Cache-Control': 'public, max-age=10, s-maxage=30' } })
     }
     const products = await listProducts()
-    return NextResponse.json(products)
+    return NextResponse.json(products, { headers: { 'Cache-Control': 'public, max-age=30, s-maxage=120, stale-while-revalidate=30' } })
   } catch (e: any) {
     console.error('GET /api/products error:', e?.message || e)
     return NextResponse.json({ error: e?.message || 'Failed to fetch products' }, { status: 500 })
