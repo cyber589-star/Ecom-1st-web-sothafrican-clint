@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 const iconPath = '/images/00a12c53-aa04-42b8-a0dc-a74e02c64e78_removalai_preview.png'
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://pridepromart.co.za'),
+  metadataBase: new URL('https://ecom-1st-web-sothafrican-clint.vercel.app'),
   title: { default: "PrideProMart - Premium Luxury E-Commerce", template: "%s | PrideProMart" },
   description: "Discover premium luxury products at PrideProMart. Shop curated collections of fashion, beauty, tech, home, and more.",
   keywords: ["luxury", "ecommerce", "premium products", "fashion", "beauty", "gadgets", "PrideProMart", "South Africa"],
