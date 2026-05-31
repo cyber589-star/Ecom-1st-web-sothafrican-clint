@@ -4,13 +4,12 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { Plus, Search, Edit, Trash2, X, Package } from 'lucide-react'
-import { getSupabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 import { formatZAR } from '@/components/ui/PriceDisplay'
 
 interface ProductForm {
-  name: string; slug: string; description: string; price: string; comparePrice: string;
-  images: string; category: string; categorySlug: string; tags: string;
+  name: string; slug: string; description: string; price: string; comparePrice: string
+  images: string; category: string; categorySlug: string; tags: string
   rating: string; reviews: string; inStock: boolean; featured: boolean
 }
 
@@ -27,29 +26,30 @@ export default function AdminProductsPage() {
   const [showModal, setShowModal] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<ProductForm>(emptyForm)
+  const [saving, setSaving] = useState(false)
 
   const load = async () => {
     try {
       const res = await fetch('/api/products')
-      if (res.ok) { const data = await res.json(); setProductList(data || []) }
-      else toast.error('Failed to load products')
-    } catch { toast.error('Failed to load products') }
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `HTTP ${res.status}`) }
+      const data = await res.json()
+      setProductList(data || [])
+    } catch (e: any) { toast.error('Failed to load products: ' + (e?.message || 'network error')) }
     finally { setLoading(false) }
   }
   useEffect(() => { load() }, [])
 
   const filtered = productList.filter(p =>
     p.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.categoryId?.toLowerCase().includes(searchQuery.toLowerCase())
+    (p.category || '').toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await getSupabase().from('products').delete().eq('id', id)
-      if (error) throw error
+      const res = await fetch(`/api/products/${id}`, { method: 'DELETE' })
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `HTTP ${res.status}`) }
       setProductList(prev => prev.filter(p => p.id !== id)); toast.success('Product deleted')
-    }
-    catch { toast.error('Delete failed') }
+    } catch (e: any) { toast.error('Delete failed: ' + (e?.message || 'network error')) }
   }
 
   const openAdd = () => { setForm(emptyForm); setEditingId(null); setShowModal(true) }
@@ -58,7 +58,7 @@ export default function AdminProductsPage() {
     setForm({
       name: product.name, slug: product.slug, description: product.description,
       price: String(product.price), comparePrice: product.comparePrice ? String(product.comparePrice) : '',
-      images: (product.images || []).join('\n'), category: product.categoryId || '',
+      images: (product.images || []).join('\n'), category: product.category || product.categoryId || '',
       categorySlug: product.categorySlug || '', tags: (product.tags || []).join(', '),
       rating: String(product.rating || 5), reviews: String(product.reviews || 0),
       inStock: product.inStock !== false, featured: product.featured || false,
@@ -68,16 +68,16 @@ export default function AdminProductsPage() {
 
   const handleSubmit = async () => {
     if (!form.name || !form.price || !form.category) { toast.error('Name, price, and category are required'); return }
+    setSaving(true)
     const tags = form.tags ? form.tags.split(',').map(s => s.trim()).filter(Boolean) : []
     const images = form.images ? form.images.split('\n').map(s => s.trim()).filter(Boolean) : ['https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=80']
-    const slug = form.slug || form.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+    const slug = form.slug || form.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Date.now()
     const payload = {
-      id: editingId || String(Date.now()),
       name: form.name, slug, description: form.description,
       price: parseFloat(form.price),
       comparePrice: form.comparePrice ? parseFloat(form.comparePrice) : null,
       images, tags,
-      categoryId: form.category,
+      category: form.category,
       categorySlug: form.category.toLowerCase().replace(/\s+/g, '-'),
       rating: parseFloat(form.rating) || 5,
       reviews: parseInt(form.reviews) || 0,
@@ -85,31 +85,33 @@ export default function AdminProductsPage() {
     }
 
     try {
-      const { error } = editingId
-        ? await getSupabase().from('products').update(payload).eq('id', editingId)
-        : await getSupabase().from('products').insert(payload)
-      if (error) throw error
+      const url = editingId ? `/api/products/${editingId}` : '/api/products'
+      const method = editingId ? 'PUT' : 'POST'
+      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `HTTP ${res.status}`) }
       toast.success(editingId ? 'Product updated' : 'Product added')
       setShowModal(false); load()
-    } catch (e: any) { console.error('Save error:', e?.message || e); toast.error('Save failed: ' + (e?.message || 'unknown')) }
+    } catch (e: any) { toast.error('Save failed: ' + (e?.message || 'unknown')) }
+    finally { setSaving(false) }
   }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith('image/')) { toast.error('Please select an image file'); return }
+    if (file.size > 5 * 1024 * 1024) { toast.error('File too large (max 5MB)'); return }
     try {
-      const ext = file.name.split('.').pop()
-      const path = `products/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-      const { error } = await getSupabase().storage.from('images').upload(path, file, { cacheControl: '3600', upsert: false })
-      if (error) throw error
-      const { data: urlData } = getSupabase().storage.from('images').getPublicUrl(path)
-      const publicUrl = urlData?.publicUrl || ''
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('folder', 'products')
+      const res = await fetch('/api/upload', { method: 'POST', body: formData })
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `HTTP ${res.status}`) }
+      const data = await res.json()
       const currentImages = form.images ? form.images.split('\n').map(s => s.trim()).filter(Boolean) : []
-      currentImages.push(publicUrl)
+      currentImages.push(data.url)
       setForm({...form, images: currentImages.join('\n')})
       toast.success('Image uploaded')
-    } catch { toast.error('Upload failed') }
+    } catch (e: any) { toast.error('Upload failed: ' + (e?.message || 'network error')) }
   }
 
   if (loading) return <div className="text-center py-12 text-gray-500">Loading...</div>
@@ -208,8 +210,7 @@ export default function AdminProductsPage() {
                 {form.price && <p className="text-[10px] text-gray-400 mt-1">Preview: <span className="text-amber-700 font-semibold">{formatZAR(form.price)}</span></p>}</div>
               <div><label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Compare Price (optional)</label>
                 <input placeholder="0.00" type="number" step="0.01" min="0" value={form.comparePrice} onChange={e => setForm({...form, comparePrice: e.target.value})}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400" />
-                {form.comparePrice && <p className="text-[10px] text-gray-400 mt-1">Preview: <span className="text-gray-500 line-through">{formatZAR(form.comparePrice)}</span></p>}</div>
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400" /></div>
               <div><label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Rating</label>
                 <input placeholder="5.0" type="number" step="0.1" min="0" max="5" value={form.rating} onChange={e => setForm({...form, rating: e.target.value})}
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400" /></div>
@@ -223,7 +224,7 @@ export default function AdminProductsPage() {
                 <textarea placeholder="Product description..." rows={3} value={form.description} onChange={e => setForm({...form, description: e.target.value})}
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400 resize-none" /></div>
               <div className="col-span-2"><label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Images</label>
-                <div className="flex gap-2 mb-2">
+                <div className="flex gap-2 mb-2 flex-wrap">
                   <input type="file" accept="image/*" onChange={handleImageUpload}
                     className="text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100" />
                 </div>
@@ -239,11 +240,11 @@ export default function AdminProductsPage() {
               </label>
             </div>
             <div className="flex gap-2.5 mt-6 pt-4 border-t border-gray-100">
-              <button onClick={handleSubmit}
-                className="flex-1 bg-amber-600 hover:bg-amber-700 text-white py-2.5 rounded-lg text-xs font-semibold transition-all shadow-sm">
-                {editingId ? 'Update Product' : 'Add Product'}
+              <button onClick={handleSubmit} disabled={saving}
+                className="flex-1 bg-amber-600 hover:bg-amber-700 disabled:bg-amber-300 text-white py-2.5 rounded-lg text-xs font-semibold transition-all shadow-sm">
+                {saving ? 'Saving...' : editingId ? 'Update Product' : 'Add Product'}
               </button>
-              <button onClick={() => setShowModal(false)}
+              <button onClick={() => setShowModal(false)} disabled={saving}
                 className="px-5 py-2.5 rounded-lg text-xs text-gray-500 hover:text-gray-700 border border-gray-200 hover:bg-gray-50">Cancel</button>
             </div>
           </motion.div>

@@ -3,24 +3,32 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Users, Search, Trash2 } from 'lucide-react'
-import { getSupabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 
 export default function AdminCustomersPage() {
   const [orders, setOrders] = useState<any[]>([])
   const [searchQuery, setSearchQuery] = useState('')
 
-  const load = async () => { try { const res = await fetch('/api/orders'); if (res.ok) setOrders(await res.json()) } catch {} }
+  const load = async () => {
+    try {
+      const res = await fetch('/api/orders')
+      if (res.ok) setOrders(await res.json())
+    } catch {}
+  }
 
   useEffect(() => { load() }, [])
 
   const handleClearAll = async () => {
     if (!confirm('Delete all orders? Customer data will reset to zero.')) return
     try {
-      const { error } = await getSupabase().from('orders').update({ status: 'Deleted', paymentStatus: 'Cancelled' }).neq('id', 'none')
-      if (error) throw error
+      const res = await fetch('/api/orders')
+      if (!res.ok) throw new Error('Failed to load orders')
+      const allOrders = await res.json()
+      for (const o of allOrders) {
+        await fetch(`/api/orders/${o.id}`, { method: 'DELETE' })
+      }
       toast.success('All customer data cleared')
-      load()
+      setOrders([])
     } catch { toast.error('Clear failed') }
   }
 
@@ -28,7 +36,7 @@ export default function AdminCustomersPage() {
   orders.forEach((o: any) => {
     const email = o.email || 'unknown'
     if (!customerMap.has(email)) {
-      customerMap.set(email, { name: o.customer || o.customerName || 'Customer', email, orders: 0, total: 0, joined: o.createdAt ? new Date(o.createdAt).toLocaleDateString() : '-' })
+      customerMap.set(email, { name: o.customerName || 'Customer', email, orders: 0, total: 0, joined: o.createdAt ? new Date(o.createdAt).toLocaleDateString() : '-' })
     }
     const c = customerMap.get(email)
     c.orders += o.itemCount || o.items || 1

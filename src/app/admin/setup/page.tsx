@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { getSupabase } from '@/lib/supabase'
 import { motion } from 'framer-motion'
 import { Trash2, Sparkles, CheckCircle, AlertCircle, Loader } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -35,10 +34,10 @@ export default function AdminSetupPage() {
     setSteps({ products: 'running', orders: 'running', categories: 'running', seed: 'idle' })
     let ok = true
 
-    for (const [key, table] of Object.entries({ products: 'products', orders: 'orders', categories: 'categories' })) {
+    for (const key of ['products', 'orders', 'categories']) {
       try {
-        const { error } = await getSupabase().from(table).delete().neq('id', 'none')
-        if (error) { updateStep(key, 'error'); ok = false }
+        const res = await fetch('/api/cleanup')
+        if (!res.ok) { updateStep(key, 'error'); ok = false }
         else updateStep(key, 'done')
       } catch { updateStep(key, 'error'); ok = false }
     }
@@ -53,16 +52,11 @@ export default function AdminSetupPage() {
     updateStep('seed', 'running')
 
     try {
-      const { error: delErr } = await getSupabase().from('categories').delete().neq('id', 'none')
-      if (delErr) throw delErr
-
-      const cats = CATEGORIES.map(c => ({ ...c, id: c.slug, productCount: 0 }))
-      const { error: insErr } = await getSupabase().from('categories').insert(cats)
-      if (insErr) throw insErr
-
+      const res = await fetch('/api/seed', { method: 'POST' })
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `HTTP ${res.status}`) }
       updateStep('seed', 'done')
       toast.success(`${CATEGORIES.length} categories created!`)
-    } catch { updateStep('seed', 'error'); toast.error('Seed failed') }
+    } catch (e: any) { updateStep('seed', 'error'); toast.error('Seed failed: ' + (e?.message || 'unknown')) }
     finally { setSeeding(false) }
   }
 

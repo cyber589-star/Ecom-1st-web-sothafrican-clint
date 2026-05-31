@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { TrendingUp, ShoppingBag, DollarSign, Users as UsersIcon, Package, Trash2 } from 'lucide-react'
-import { getSupabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 
 export default function AdminAnalyticsPage() {
@@ -13,12 +12,14 @@ export default function AdminAnalyticsPage() {
   const load = async () => {
     try {
       const [pRes, oRes] = await Promise.all([fetch('/api/products'), fetch('/api/orders')])
+      if (!pRes.ok || !oRes.ok) throw new Error('Failed to fetch data')
       const products = await pRes.json()
       const orders = await oRes.json()
       const totalRevenue = orders.reduce((sum: number, o: any) => sum + (parseFloat((o.total || 'R0').replace('R','')) || 0), 0)
       const uniqueCustomers = new Set(orders.map((o: any) => o.email)).size
       setStats({ products: products.length, orders: orders.length, revenue: totalRevenue, customers: uniqueCustomers })
-    } catch {} finally { setLoading(false) }
+    } catch (e: any) { console.error('Analytics load error:', e?.message) }
+    finally { setLoading(false) }
   }
 
   useEffect(() => { load() }, [])
@@ -26,8 +27,12 @@ export default function AdminAnalyticsPage() {
   const handleClearAll = async () => {
     if (!confirm('Delete all orders? This cannot be undone.')) return
     try {
-      const { error } = await getSupabase().from('orders').update({ status: 'Deleted', paymentStatus: 'Cancelled' }).neq('id', 'none')
-      if (error) throw error
+      const res = await fetch('/api/orders')
+      if (!res.ok) throw new Error('Failed to load orders')
+      const allOrders = await res.json()
+      for (const o of allOrders) {
+        await fetch(`/api/orders/${o.id}`, { method: 'DELETE' })
+      }
       toast.success('All orders cleared')
       load()
     } catch { toast.error('Clear failed') }

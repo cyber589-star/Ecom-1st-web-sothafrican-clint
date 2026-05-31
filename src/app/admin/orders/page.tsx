@@ -3,11 +3,8 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Eye, Package, Search, X, CreditCard, Truck, Trash2 } from 'lucide-react'
-import { getSupabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
-
-const PAYMENT_STATUSES = ['Pending', 'Paid', 'Failed', 'Cancelled']
-const ORDER_STATUSES = ['Pending', 'Processing', 'Shipped', 'Completed', 'Cancelled']
+import { formatZAR } from '@/components/ui/PriceDisplay'
 
 export default function AdminOrdersPage() {
   const [orderList, setOrderList] = useState<any[]>([])
@@ -17,109 +14,122 @@ export default function AdminOrdersPage() {
 
   const load = async () => {
     try {
-      const { data, error } = await getSupabase().from('orders').select('*').order('createdAt', { ascending: false })
-      if (!error && data) setOrderList(data)
-    } catch {}
+      const res = await fetch('/api/orders')
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      setOrderList(data || [])
+    } catch (e: any) { toast.error('Failed to load orders: ' + (e?.message || 'network error')) }
     finally { setLoading(false) }
   }
-
   useEffect(() => { load() }, [])
 
-  // Filter out soft-deleted orders, but allow searching for them
-  const filtered = orderList.filter(o => {
-    if ((o.status || '').toLowerCase() === 'deleted') return false
-    if (!searchQuery) return true
-    return (o.customer || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (o.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      o.id.toLowerCase().includes(searchQuery.toLowerCase())
-  })
+  const filtered = orderList.filter(o =>
+    o.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    o.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (o.id || '').toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this order?')) return
     try {
-      const { error } = await getSupabase().from('orders').update({ status: 'Deleted', paymentStatus: 'Cancelled' }).eq('id', id)
-      if (error) throw error
-      toast.success('Order deleted')
-      setSelectedOrder(null)
-      load()
+      const res = await fetch(`/api/orders/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Delete failed')
+      setOrderList(prev => prev.filter(o => o.id !== id)); toast.success('Order deleted')
     } catch { toast.error('Delete failed') }
   }
 
-  const updateOrderField = async (id: string, field: string, value: string) => {
+  const updateField = async (id: string, field: string, value: any) => {
     try {
-      const { error } = await getSupabase().from('orders').update({ [field]: value }).eq('id', id)
-      if (error) throw error
-      toast.success(`${field} updated to ${value}`)
-      load()
-      setSelectedOrder((prev: any) => prev?.id === id ? { ...prev, [field]: value } : prev)
+      const res = await fetch(`/api/orders/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: value }),
+      })
+      if (!res.ok) throw new Error('Update failed')
+      setOrderList(prev => prev.map(o => o.id === id ? { ...o, [field]: value } : o))
+      toast.success('Order updated')
     } catch { toast.error('Update failed') }
+  }
+
+  const clearAllOrders = async () => {
+    try {
+      for (const o of orderList) {
+        await fetch(`/api/orders/${o.id}`, { method: 'DELETE' })
+      }
+      setOrderList([]); toast.success('All orders cleared')
+    } catch { toast.error('Failed to clear orders') }
   }
 
   if (loading) return <div className="text-center py-12 text-gray-500">Loading...</div>
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-lg font-semibold text-gray-900">Orders</h1>
-        <p className="text-xs text-gray-500 mt-0.5">{orderList.filter(o => (o.status || '').toLowerCase() !== 'deleted').length} active orders</p>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-lg font-semibold text-gray-900">Orders</h1>
+          <p className="text-xs text-gray-500 mt-0.5">{orderList.length} order{orderList.length !== 1 ? 's' : ''}</p>
+        </div>
+        {orderList.length > 0 && <button onClick={clearAllOrders} className="flex items-center gap-1.5 border border-red-200 text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg text-xs font-semibold transition-all"><Trash2 size={14} /> Clear All</button>}
       </div>
 
-      {orderList.length > 0 && (
-        <div className="relative max-w-xs">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search orders..." className="w-full bg-white border border-gray-200 rounded-lg py-2 pl-9 pr-3 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400" />
-        </div>
-      )}
+      <div className="relative max-w-xs">
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search orders..." className="w-full bg-white border border-gray-200 rounded-lg py-2 pl-9 pr-3 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400" />
+      </div>
 
       <div className="rounded-xl bg-white border border-gray-200 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
-            <thead><tr className="border-b border-gray-100 bg-gray-50">
-              <th className="text-left p-3 text-gray-500 font-medium">Order ID</th>
-              <th className="text-left p-3 text-gray-500 font-medium">Customer</th>
-              <th className="text-left p-3 text-gray-500 font-medium">Items</th>
-              <th className="text-left p-3 text-gray-500 font-medium">Total</th>
-              <th className="text-left p-3 text-gray-500 font-medium">Payment</th>
-              <th className="text-left p-3 text-gray-500 font-medium">Status</th>
-              <th className="text-left p-3 text-gray-500 font-medium">Date</th>
-              <th className="text-right p-3 text-gray-500 font-medium">Action</th>
-            </tr></thead>
+            <thead>
+              <tr className="border-b border-gray-100 bg-gray-50">
+                <th className="text-left p-3 text-gray-500 font-medium">Customer</th>
+                <th className="text-left p-3 text-gray-500 font-medium">Items</th>
+                <th className="text-left p-3 text-gray-500 font-medium">Total</th>
+                <th className="text-left p-3 text-gray-500 font-medium">Status</th>
+                <th className="text-left p-3 text-gray-500 font-medium">Payment</th>
+                <th className="text-right p-3 text-gray-500 font-medium">Actions</th>
+              </tr>
+            </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={8} className="p-12 text-center">
+                <tr><td colSpan={6} className="p-12 text-center">
                   <Package size={28} className="mx-auto mb-2 text-gray-300" />
-                  <p className="text-sm text-gray-500">{orderList.filter(o => (o.status || '').toLowerCase() !== 'deleted').length === 0 ? 'No orders yet' : 'No orders match your search'}</p>
+                  <p className="text-sm text-gray-500">No orders found</p>
                 </td></tr>
               )}
               {filtered.map((order, i) => (
-                <motion.tr key={order.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
+                <motion.tr key={order.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}
                   className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                  <td className="p-3 text-gray-900 font-medium">{order.id}</td>
-                  <td className="p-3"><p className="text-gray-900">{order.customer || 'Customer'}</p><p className="text-[10px] text-gray-500">{order.email}</p></td>
-                  <td className="p-3 text-gray-500">{order.items || 0}</td>
-                  <td className="p-3 text-amber-700 font-semibold">{order.total || 'R0'}</td>
                   <td className="p-3">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${(order.paymentStatus || '').toLowerCase() === 'paid' ? 'bg-emerald-100 text-emerald-700' : (order.paymentStatus || '').toLowerCase() === 'failed' ? 'bg-red-100 text-red-700' : (order.paymentStatus || '').toLowerCase() === 'cancelled' ? 'bg-gray-100 text-gray-600' : 'bg-amber-100 text-amber-700'}`}>
-                      {order.paymentStatus || 'Pending'}
-                    </span>
+                    <div className="text-gray-900 font-medium truncate max-w-[160px]">{order.customerName}</div>
+                    <div className="text-[10px] text-gray-400">{order.email}</div>
+                  </td>
+                  <td className="p-3 text-gray-500">{order.itemCount || order.items}</td>
+                  <td className="p-3 text-amber-700 font-semibold">{order.total}</td>
+                  <td className="p-3">
+                    <select value={order.status} onChange={(e) => updateField(order.id, 'status', e.target.value)}
+                      className={`text-[10px] px-2 py-1 rounded-lg border-0 font-medium ${
+                        order.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' :
+                        order.status === 'Shipped' ? 'bg-blue-100 text-blue-700' :
+                        order.status === 'Processing' ? 'bg-amber-100 text-amber-700' :
+                        order.status === 'Deleted' ? 'bg-red-100 text-red-700' :
+                        'bg-gray-100 text-gray-600'
+                      }`}>
+                      <option value="Pending">Pending</option>
+                      <option value="Processing">Processing</option>
+                      <option value="Shipped">Shipped</option>
+                      <option value="Completed">Completed</option>
+                    </select>
                   </td>
                   <td className="p-3">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${(order.status || '').toLowerCase() === 'completed' ? 'bg-emerald-100 text-emerald-700' : (order.status || '').toLowerCase() === 'shipped' ? 'bg-blue-100 text-blue-700' : (order.status || '').toLowerCase() === 'processing' ? 'bg-amber-100 text-amber-700' : (order.status || '').toLowerCase() === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}>
-                      {order.status || 'Pending'}
-                    </span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                      order.paymentStatus === 'paid' || order.paymentStatus === 'Paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'
+                    }`}>{order.paymentStatus || 'Pending'}</span>
                   </td>
-                  <td className="p-3 text-gray-500">{order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '-'}</td>
                   <td className="p-3 text-right">
                     <div className="flex items-center justify-end gap-0.5">
-                      <button onClick={() => setSelectedOrder(order)}
-                        className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded">
-                        <Eye size={13} />
-                      </button>
-                      <button onClick={() => handleDelete(order.id)}
-                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded">
-                        <Trash2 size={13} />
-                      </button>
+                      <button onClick={() => setSelectedOrder(order)} className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded"><Eye size={13} /></button>
+                      <button onClick={() => handleDelete(order.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"><Trash2 size={13} /></button>
                     </div>
                   </td>
                 </motion.tr>
@@ -130,99 +140,33 @@ export default function AdminOrdersPage() {
       </div>
 
       {selectedOrder && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 overflow-y-auto"
-          onClick={() => setSelectedOrder(null)}>
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setSelectedOrder(null)}>
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-            onClick={e => e.stopPropagation()}
-            className="bg-white rounded-xl border border-gray-200 p-6 max-w-lg w-full my-8 shadow-lg">
-            <div className="flex items-center justify-between mb-5">
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-xl border border-gray-200 p-5 max-w-lg w-full max-h-[80vh] overflow-y-auto shadow-lg">
+            <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold text-gray-900">Order Details</h3>
               <button onClick={() => setSelectedOrder(null)} className="p-1 text-gray-400 hover:text-gray-600"><X size={16} /></button>
             </div>
-
-            <div className="space-y-4 text-sm">
+            <div className="space-y-3 text-xs">
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">Order ID</p>
-                  <p className="text-gray-900 font-medium">{selectedOrder.id}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">Date</p>
-                  <p className="text-gray-900">{selectedOrder.createdAt ? new Date(selectedOrder.createdAt).toLocaleString() : '-'}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">Customer</p>
-                  <p className="text-gray-900">{selectedOrder.customer || 'Customer'}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">Email</p>
-                  <p className="text-gray-900 break-all">{selectedOrder.email}</p>
-                </div>
+                <div><p className="text-gray-400">Order ID</p><p className="text-gray-900 font-medium break-all">{selectedOrder.id}</p></div>
+                <div><p className="text-gray-400">Date</p><p className="text-gray-900">{new Date(selectedOrder.createdAt).toLocaleDateString()}</p></div>
+                <div><p className="text-gray-400">Customer</p><p className="text-gray-900">{selectedOrder.customerName}</p></div>
+                <div><p className="text-gray-400">Email</p><p className="text-gray-900">{selectedOrder.email}</p></div>
+                <div><p className="text-gray-400">Phone</p><p className="text-gray-900">{selectedOrder.phone || '-'}</p></div>
+                <div><p className="text-gray-400">Payment</p><p className="text-gray-900">{selectedOrder.paymentMethod}</p></div>
               </div>
-
-              <div className="border-t border-gray-100 pt-4">
-                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-2">Shipping Address</p>
-                <p className="text-gray-700 text-xs">
-                  {selectedOrder.shippingAddress?.address || 'N/A'}, {selectedOrder.shippingAddress?.city || ''}, {selectedOrder.shippingAddress?.state || ''} {selectedOrder.shippingAddress?.zip || ''}
+              <div className="border-t border-gray-100 pt-3"><p className="text-gray-400 mb-1">Shipping Address</p>
+                <p className="text-gray-900">
+                  {selectedOrder.shippingAddress?.address}, {selectedOrder.shippingAddress?.city}, {selectedOrder.shippingAddress?.state || ''} {selectedOrder.shippingAddress?.zip || ''}
                 </p>
               </div>
-
-              <div className="border-t border-gray-100 pt-4">
-                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-2">Order Items</p>
-                {selectedOrder.itemsDetail && selectedOrder.itemsDetail.length > 0 ? (
-                  <div className="space-y-1">
-                    {selectedOrder.itemsDetail.map((item: any, idx: number) => (
-                      <div key={idx} className="flex justify-between text-xs text-gray-700">
-                        <span>{item.name} x{item.quantity}</span>
-                        <span className="text-amber-700 font-semibold">R {(item.price * item.quantity).toFixed(2)}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-gray-400">No item details</p>
-                )}
-              </div>
-
-              <div className="border-t border-gray-100 pt-4">
-                <div className="flex justify-between text-sm font-bold mb-3">
-                  <span className="text-gray-900">Total</span>
-                  <span className="text-amber-700">{selectedOrder.total || 'R0'}</span>
-                </div>
-              </div>
-
-              <div className="border-t border-gray-100 pt-4 space-y-4">
-                <div>
-                  <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1.5">Payment Method</label>
-                  <div className="flex items-center gap-2 text-sm">
-                    {selectedOrder.paymentMethod === 'PayPal' ? <CreditCard size={14} className="text-blue-600" /> : <Truck size={14} className="text-gray-600" />}
-                    <span className="text-gray-900">{selectedOrder.paymentMethod || 'N/A'}</span>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1.5">Payment Status</label>
-                  <select value={selectedOrder.paymentStatus || 'Pending'}
-                    onChange={e => updateOrderField(selectedOrder.id, 'paymentStatus', e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-amber-400">
-                    {PAYMENT_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1.5">Order Status</label>
-                  <select value={selectedOrder.status || 'Pending'}
-                    onChange={e => updateOrderField(selectedOrder.id, 'status', e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-amber-400">
-                    {ORDER_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              <div className="border-t border-gray-100 pt-4">
-                <button onClick={() => handleDelete(selectedOrder.id)}
-                  className="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-700 py-2.5 rounded-lg text-xs font-semibold transition-all">
-                  <Trash2 size={13} /> Delete Order
-                </button>
+              <div className="border-t border-gray-100 pt-3"><p className="text-gray-400 mb-2">Items</p>
+                {(selectedOrder.itemsDetail || []).map((item: any, i: number) => (
+                  <div key={i} className="flex justify-between py-1.5"><span className="text-gray-900">{item.name} × {item.quantity}</span><span className="text-amber-700">{formatZAR(item.price * item.quantity)}</span></div>
+                ))}
+                <div className="border-t border-gray-100 mt-2 pt-2 flex justify-between font-semibold"><span className="text-gray-900">Total</span><span className="text-amber-700">{selectedOrder.total}</span></div>
               </div>
             </div>
           </motion.div>

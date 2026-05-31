@@ -1,34 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { listOrders, createOrder } from '@/lib/supabase-service'
-import { getSupabaseServer } from '@/lib/supabase-server'
+import { listOrders, createOrder, updateOrder, deleteOrder } from '@/lib/supabase-service'
 
 export async function GET() {
   try {
-    const { data, error } = await getSupabaseServer().from('orders').select('*').neq('status', 'Deleted').order('createdAt', { ascending: false })
-    if (error) throw error
-    return NextResponse.json(data || [])
+    const orders = await listOrders()
+    return NextResponse.json(orders)
+  } catch (e: any) {
+    console.error('GET /api/orders error:', e?.message || e)
+    return NextResponse.json({ error: e?.message || 'Failed to fetch orders' }, { status: 500 })
   }
-  catch { return NextResponse.json([]) }
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const order = {
-      id: body.id || 'ORD-' + Date.now(),
-      customer: body.customer || body.customerName || 'Customer',
-      customerName: body.customerName || body.customer || '',
-      email: body.email || '',
-      items: body.items || 0,
-      itemCount: body.itemCount || 0,
-      total: body.total || 'R0',
-      status: body.status || 'Pending',
-      paymentMethod: body.paymentMethod || '',
-      paymentStatus: body.paymentStatus || 'pending',
-      itemsDetail: body.itemsDetail || [],
-      shippingAddress: body.shippingAddress || {},
+    if (!body.customerName || !body.email) {
+      return NextResponse.json({ error: 'Customer name and email are required' }, { status: 400 })
     }
-    const result = await createOrder(order)
-    return NextResponse.json(result, { status: 201 })
-  } catch { return NextResponse.json({ error: 'Invalid request' }, { status: 400 }) }
+    const order = await createOrder(body)
+    return NextResponse.json(order, { status: 201 })
+  } catch (e: any) {
+    console.error('POST /api/orders error:', e?.message || e)
+    return NextResponse.json({ error: e?.message || 'Failed to create order' }, { status: 500 })
+  }
 }

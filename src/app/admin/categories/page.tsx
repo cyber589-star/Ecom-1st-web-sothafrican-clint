@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Plus, Edit, Trash2, X, FolderOpen } from 'lucide-react'
-import { getSupabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 
 interface CatForm { name: string; slug: string; image: string; description: string }
@@ -15,24 +14,25 @@ export default function AdminCategoriesPage() {
   const [showModal, setShowModal] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<CatForm>(emptyForm)
+  const [saving, setSaving] = useState(false)
 
   const load = async () => {
     try {
       const res = await fetch('/api/categories')
-      if (res.ok) { const data = await res.json(); setCategoryList(data || []) }
-      else toast.error('Failed to load categories')
-    } catch { toast.error('Failed to load categories') }
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `HTTP ${res.status}`) }
+      const data = await res.json()
+      setCategoryList(data || [])
+    } catch (e: any) { toast.error('Failed to load categories: ' + (e?.message || 'network error')) }
     finally { setLoading(false) }
   }
   useEffect(() => { load() }, [])
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await getSupabase().from('categories').delete().eq('id', id)
-      if (error) throw error
+      const res = await fetch(`/api/categories/${id}`, { method: 'DELETE' })
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `HTTP ${res.status}`) }
       setCategoryList(prev => prev.filter(c => c.id !== id)); toast.success('Category deleted')
-    }
-    catch { toast.error('Delete failed') }
+    } catch (e: any) { toast.error('Delete failed: ' + (e?.message || 'network error')) }
   }
 
   const openAdd = () => { setForm(emptyForm); setEditingId(null); setShowModal(true) }
@@ -40,29 +40,36 @@ export default function AdminCategoriesPage() {
 
   const handleSubmit = async () => {
     if (!form.name) { toast.error('Category name is required'); return }
+    setSaving(true)
+    const slug = form.slug || form.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Date.now()
+    const payload = { name: form.name, slug, image: form.image || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=80', description: form.description }
+
     try {
-      const { error } = editingId
-        ? await getSupabase().from('categories').update(form).eq('id', editingId)
-        : await getSupabase().from('categories').insert({ ...form, id: String(Date.now()) })
-      if (error) throw error
+      const url = editingId ? `/api/categories/${editingId}` : '/api/categories'
+      const method = editingId ? 'PUT' : 'POST'
+      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `HTTP ${res.status}`) }
       toast.success(editingId ? 'Category updated' : 'Category added')
       setShowModal(false); load()
-    } catch { toast.error('Save failed') }
+    } catch (e: any) { toast.error('Save failed: ' + (e?.message || 'unknown')) }
+    finally { setSaving(false) }
   }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith('image/')) { toast.error('Please select an image file'); return }
+    if (file.size > 5 * 1024 * 1024) { toast.error('File too large (max 5MB)'); return }
     try {
-      const ext = file.name.split('.').pop()
-      const path = `categories/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-      const { error } = await getSupabase().storage.from('images').upload(path, file, { cacheControl: '3600', upsert: false })
-      if (error) throw error
-      const { data: urlData } = getSupabase().storage.from('images').getPublicUrl(path)
-      setForm({...form, image: urlData?.publicUrl || ''})
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('folder', 'categories')
+      const res = await fetch('/api/upload', { method: 'POST', body: formData })
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `HTTP ${res.status}`) }
+      const data = await res.json()
+      setForm({...form, image: data.url})
       toast.success('Image uploaded')
-    } catch { toast.error('Upload failed') }
+    } catch (e: any) { toast.error('Upload failed: ' + (e?.message || 'network error')) }
   }
 
   if (loading) return <div className="text-center py-12 text-gray-500">Loading...</div>
@@ -123,9 +130,10 @@ export default function AdminCategoriesPage() {
                 <input placeholder="category-slug" value={form.slug} onChange={e => setForm({...form, slug: e.target.value})}
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400" /></div>
               <div><label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Image</label>
-                <div className="flex gap-2 mb-2">
+                <div className="flex gap-2 mb-2 flex-wrap">
                   <input type="file" accept="image/*" onChange={handleImageUpload}
                     className="text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100" />
+                  {form.image && <span className="text-[10px] text-green-600 self-center">✓ uploaded</span>}
                 </div>
                 <input placeholder="Image URL" value={form.image} onChange={e => setForm({...form, image: e.target.value})}
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400" /></div>
@@ -134,10 +142,12 @@ export default function AdminCategoriesPage() {
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400 resize-none" /></div>
             </div>
             <div className="flex gap-2.5 mt-5 pt-4 border-t border-gray-100">
-              <button onClick={handleSubmit} className="flex-1 bg-amber-600 hover:bg-amber-700 text-white py-2.5 rounded-lg text-xs font-semibold transition-all shadow-sm">
-                {editingId ? 'Update Category' : 'Add Category'}
+              <button onClick={handleSubmit} disabled={saving}
+                className="flex-1 bg-amber-600 hover:bg-amber-700 disabled:bg-amber-300 text-white py-2.5 rounded-lg text-xs font-semibold transition-all shadow-sm">
+                {saving ? 'Saving...' : editingId ? 'Update Category' : 'Add Category'}
               </button>
-              <button onClick={() => setShowModal(false)} className="px-5 py-2.5 rounded-lg text-xs text-gray-500 hover:text-gray-700 border border-gray-200 hover:bg-gray-50">Cancel</button>
+              <button onClick={() => setShowModal(false)} disabled={saving}
+                className="px-5 py-2.5 rounded-lg text-xs text-gray-500 hover:text-gray-700 border border-gray-200 hover:bg-gray-50">Cancel</button>
             </div>
           </motion.div>
         </div>
