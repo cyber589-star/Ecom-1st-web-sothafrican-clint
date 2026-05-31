@@ -78,21 +78,17 @@ export default function AdminProductsPage() {
     const cp = form.comparePrice ? parseFloat(form.comparePrice) : null
     const cat = form.category || ''
     const catSlug = cat ? cat.toLowerCase().replace(/\s+/g, '-') : ''
-    const payload = {
+    const payload: Record<string, any> = {
       name: form.name, slug, description: form.description,
       price: p,
       compareprice: cp,
-      comparePrice: cp,
       images, tags,
       categoryid: cat,
-      category: cat,
       categoryslug: catSlug,
-      categorySlug: catSlug,
       rating: parseFloat(form.rating) || 5,
       reviews: parseInt(form.reviews) || 0,
       featured: form.featured,
       instock: form.inStock,
-      inStock: form.inStock,
     }
 
     try {
@@ -181,7 +177,7 @@ export default function AdminProductsPage() {
                   <td className="p-3 text-amber-700 font-semibold">{formatZAR(product.price)}</td>
                   <td className="p-3 text-gray-500">{product.rating}</td>
                   <td className="p-3">
-                    <button onClick={async () => { try { const cur = product.instock ?? product.inStock; const r = await fetch(`/api/products/${product.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ instock: !cur, inStock: !cur }) }); if (!r.ok) throw Error(); setProductList(prev => prev.map(p => p.id === product.id ? { ...p, instock: !cur, inStock: !cur } : p)); toast.success('Stock updated') } catch { toast.error('Failed to update') } }}
+                    <button onClick={async () => { try { const cur = product.instock ?? product.inStock; const r = await fetch(`/api/products/${product.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ instock: !cur }) }); if (!r.ok) throw Error(); setProductList(prev => prev.map(p => p.id === product.id ? { ...p, instock: !cur, inStock: !cur } : p)); toast.success('Stock updated') } catch { toast.error('Failed to update') } }}
                       className={`text-[10px] px-2 py-0.5 rounded-full font-medium cursor-pointer transition-all ${
                         (product.instock ?? product.inStock) ? 'bg-emerald-100 text-emerald-700 hover:bg-red-100 hover:text-red-700' : 'bg-red-100 text-red-700 hover:bg-emerald-100 hover:text-emerald-700'
                       }`}>
