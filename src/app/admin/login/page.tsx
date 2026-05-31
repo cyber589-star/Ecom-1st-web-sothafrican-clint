@@ -1,19 +1,29 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Lock, Mail, Eye, EyeOff, LogIn } from 'lucide-react'
 import { useAdmin } from '@/context/AdminContext'
 import toast from 'react-hot-toast'
 
 export default function AdminLoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="w-8 h-8 border-2 border-amber-200 border-t-amber-600 rounded-full animate-spin" /></div>}>
+      <LoginForm />
+    </Suspense>
+  )
+}
+
+function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [busy, setBusy] = useState(false)
   const { login } = useAdmin()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirect') || '/admin'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -21,9 +31,9 @@ export default function AdminLoginPage() {
     const success = await login(email, password)
     if (success) {
       toast.success('Welcome back, Admin!')
-      router.push('/admin')
+      router.push(redirectTo)
     } else {
-      toast.error('Invalid credentials. Check ADMIN_EMAIL / ADMIN_PASSWORD in Vercel env vars.')
+      toast.error('Invalid credentials.')
     }
     setBusy(false)
   }
