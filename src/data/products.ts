@@ -1,7 +1,8 @@
 import { fetchWithTimeout } from '@/lib/fetch-with-timeout'
 
 async function api(url: string) {
-  const res = await fetchWithTimeout(url)
+  const sep = url.includes('?') ? '&' : '?'
+  const res = await fetchWithTimeout(`${url}${sep}_=${Date.now()}`, { cache: 'no-store' })
   if (!res.ok) return []
   return res.json()
 }
@@ -12,7 +13,7 @@ export async function fetchProducts(): Promise<any[]> {
 
 export async function fetchProductBySlug(slug: string): Promise<any | null> {
   try {
-    const res = await fetchWithTimeout(`/api/products?slug=${encodeURIComponent(slug)}`)
+    const res = await fetchWithTimeout(`/api/products?slug=${encodeURIComponent(slug)}&_=${Date.now()}`, { cache: 'no-store' })
     if (!res.ok) return null
     return await res.json()
   } catch { return null }
