@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { Plus, Search, Edit, Trash2, X, Package } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { compressImage } from '@/lib/compress-image'
 import { formatZAR } from '@/components/ui/PriceDisplay'
 
 interface ProductForm {
@@ -106,12 +107,17 @@ export default function AdminProductsPage() {
     const file = e.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith('image/')) { toast.error('Please select an image file'); return }
-    if (file.size > 5 * 1024 * 1024) { toast.error('File too large (max 5MB)'); return }
+    if (file.size > 10 * 1024 * 1024) { toast.error('File too large (max 10MB)'); return }
     try {
+      toast.loading('Compressing...')
+      const compressed = await compressImage(file, 800, 0.7)
+      toast.dismiss()
+      toast.loading('Uploading...')
       const formData = new FormData()
-      formData.append('file', file)
+      formData.append('file', compressed, file.name.replace(/\.[^.]+$/, '') + '.jpg')
       formData.append('folder', 'products')
       const res = await fetch('/api/upload', { method: 'POST', body: formData })
+      toast.dismiss()
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `HTTP ${res.status}`) }
       const data = await res.json()
       const currentImages = form.images ? form.images.split('\n').map(s => s.trim()).filter(Boolean) : []
