@@ -13,11 +13,32 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 })
 
+const iconPath = '/images/00a12c53-aa04-42b8-a0dc-a74e02c64e78_removalai_preview.png'
+
 export const metadata: Metadata = {
-  title: "PrideProMart - Premium Luxury E-Commerce",
+  metadataBase: new URL('https://pridepromart.co.za'),
+  title: { default: "PrideProMart - Premium Luxury E-Commerce", template: "%s | PrideProMart" },
   description: "Discover premium luxury products at PrideProMart. Shop curated collections of fashion, beauty, tech, home, and more.",
-  keywords: "luxury, ecommerce, premium products, fashion, beauty, gadgets, PrideProMart",
-  icons: { icon: '/images/00a12c53-aa04-42b8-a0dc-a74e02c64e78_removalai_preview.png', apple: '/images/00a12c53-aa04-42b8-a0dc-a74e02c64e78_removalai_preview.png' },
+  keywords: ["luxury", "ecommerce", "premium products", "fashion", "beauty", "gadgets", "PrideProMart", "South Africa"],
+  icons: {
+    icon: [{ url: iconPath, type: 'image/png' }, { url: '/favicon.ico', sizes: 'any' }],
+    apple: [{ url: iconPath, sizes: '180x180', type: 'image/png' }],
+  },
+  openGraph: {
+    title: "PrideProMart - Premium Luxury E-Commerce",
+    description: "Discover premium luxury products at PrideProMart.",
+    url: "https://pridepromart.co.za",
+    siteName: "PrideProMart",
+    images: [{ url: iconPath, width: 512, height: 512 }],
+    locale: "en_ZA",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PrideProMart - Premium Luxury E-Commerce",
+    description: "Discover premium luxury products at PrideProMart.",
+    images: [iconPath],
+  },
 }
 
 export default function RootLayout({
