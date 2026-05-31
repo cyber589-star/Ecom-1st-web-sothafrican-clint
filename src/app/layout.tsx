@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   description: "Discover premium luxury products at PrideProMart. Shop curated collections of fashion, beauty, tech, home, and more.",
   keywords: ["luxury", "ecommerce", "premium products", "fashion", "beauty", "gadgets", "PrideProMart", "South Africa"],
   icons: {
-    icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }, { url: iconPath, type: 'image/png' }, { url: '/favicon.ico', sizes: 'any' }],
+    icon: [{ url: iconPath, type: 'image/png' }],
     apple: [{ url: iconPath, sizes: '180x180', type: 'image/png' }],
   },
   openGraph: {
