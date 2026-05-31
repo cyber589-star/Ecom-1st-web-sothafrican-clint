@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(results, { headers: { 'Cache-Control': 'public, max-age=10, s-maxage=30' } })
     }
     const products = await listProducts()
-    return NextResponse.json(products, { headers: { 'Cache-Control': 'public, max-age=30, s-maxage=120, stale-while-revalidate=30' } })
+    return NextResponse.json(products, { headers: { 'Cache-Control': 'no-cache, max-age=10' } })
   } catch (e: any) {
     const msg = (e?.message || e?.error?.message || 'Failed to fetch products').slice(0, 500)
     console.error('GET /api/products error:', msg)

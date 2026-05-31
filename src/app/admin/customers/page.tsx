@@ -11,7 +11,7 @@ export default function AdminCustomersPage() {
 
   const load = async () => {
     try {
-      const res = await fetch('/api/orders')
+      const res = await fetch('/api/orders?_=' + Date.now())
       if (res.ok) setOrders(await res.json())
     } catch {}
   }
@@ -21,7 +21,7 @@ export default function AdminCustomersPage() {
   const handleClearAll = async () => {
     if (!confirm('Delete all orders? Customer data will reset to zero.')) return
     try {
-      const res = await fetch('/api/orders')
+      const res = await fetch('/api/orders?_=' + Date.now())
       if (!res.ok) throw new Error('Failed to load orders')
       const allOrders = await res.json()
       for (const o of allOrders) {

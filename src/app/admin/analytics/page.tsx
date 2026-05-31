@@ -11,7 +11,7 @@ export default function AdminAnalyticsPage() {
 
   const load = async () => {
     try {
-      const [pRes, oRes] = await Promise.all([fetch('/api/products'), fetch('/api/orders')])
+      const t = Date.now(); const [pRes, oRes] = await Promise.all([fetch('/api/products?_=' + t), fetch('/api/orders?_=' + t)])
       if (!pRes.ok || !oRes.ok) throw new Error('Failed to fetch data')
       const products = await pRes.json()
       const orders = await oRes.json()
@@ -27,7 +27,7 @@ export default function AdminAnalyticsPage() {
   const handleClearAll = async () => {
     if (!confirm('Delete all orders? This cannot be undone.')) return
     try {
-      const res = await fetch('/api/orders')
+      const res = await fetch('/api/orders?_=' + Date.now())
       if (!res.ok) throw new Error('Failed to load orders')
       const allOrders = await res.json()
       for (const o of allOrders) {

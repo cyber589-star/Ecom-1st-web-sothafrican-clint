@@ -30,7 +30,7 @@ export default function AdminProductsPage() {
 
   const load = async () => {
     try {
-      const res = await fetch('/api/products')
+      const res = await fetch('/api/products?_=' + Date.now())
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `HTTP ${res.status}`) }
       const data = await res.json()
       setProductList(Array.isArray(data) ? data : [])

@@ -9,7 +9,7 @@ export default function AdminDashboard() {
   const [allProducts, setProducts] = useState<any[]>([])
   const [orders, setOrders] = useState<any[]>([])
 
-  useEffect(() => { (async () => { try { const [p, o] = await Promise.all([fetch('/api/products').then(r => r.json()), fetch('/api/orders').then(r => r.json())]); setProducts(Array.isArray(p) ? p : []); setOrders(Array.isArray(o) ? o : []) } catch {} })() }, [])
+  useEffect(() => { (async () => { try { const t = Date.now(); const [p, o] = await Promise.all([fetch('/api/products?_=' + t).then(r => r.json()), fetch('/api/orders?_=' + t).then(r => r.json())]); setProducts(Array.isArray(p) ? p : []); setOrders(Array.isArray(o) ? o : []) } catch {} })() }, [])
 
   const productCount = allProducts.length
   const orderCount = orders.length

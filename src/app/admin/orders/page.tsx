@@ -14,7 +14,7 @@ export default function AdminOrdersPage() {
 
   const load = async () => {
     try {
-      const res = await fetch('/api/orders')
+      const res = await fetch('/api/orders?_=' + Date.now())
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `HTTP ${res.status}`) }
       const data = await res.json()
       setOrderList(Array.isArray(data) ? data : [])

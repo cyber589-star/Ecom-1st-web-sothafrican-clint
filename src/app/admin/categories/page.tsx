@@ -18,7 +18,7 @@ export default function AdminCategoriesPage() {
 
   const load = async () => {
     try {
-      const res = await fetch('/api/categories')
+      const res = await fetch('/api/categories?_=' + Date.now())
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `HTTP ${res.status}`) }
       const data = await res.json()
       setCategoryList(Array.isArray(data) ? data : [])
