@@ -18,8 +18,9 @@ export async function GET(req: NextRequest) {
     const products = await listProducts()
     return NextResponse.json(products, { headers: { 'Cache-Control': 'public, max-age=30, s-maxage=120, stale-while-revalidate=30' } })
   } catch (e: any) {
-    console.error('GET /api/products error:', e?.message || e)
-    return NextResponse.json({ error: e?.message || 'Failed to fetch products' }, { status: 500 })
+    const msg = (e?.message || e?.error?.message || 'Failed to fetch products').slice(0, 500)
+    console.error('GET /api/products error:', msg)
+    return NextResponse.json({ error: msg, detail: 'Check Supabase env vars (NEXT_PUBLIC_SUPABASE_URL, anon key) on Vercel' }, { status: 500 })
   }
 }
 
@@ -36,7 +37,8 @@ export async function POST(req: NextRequest) {
     const product = await createProduct(body)
     return NextResponse.json(product, { status: 201 })
   } catch (e: any) {
-    console.error('POST /api/products error:', e?.message || e)
-    return NextResponse.json({ error: e?.message || 'Failed to create product' }, { status: 500 })
+    const msg = (e?.message || e?.error?.message || 'Failed to create product').slice(0, 500)
+    console.error('POST /api/products error:', msg)
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 }

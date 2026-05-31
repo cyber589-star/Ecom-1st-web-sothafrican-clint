@@ -6,8 +6,9 @@ export async function GET() {
     const categories = await listCategories()
     return NextResponse.json(categories, { headers: { 'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=60' } })
   } catch (e: any) {
-    console.error('GET /api/categories error:', e?.message || e)
-    return NextResponse.json({ error: e?.message || 'Failed to fetch categories' }, { status: 500 })
+    const msg = (e?.message || e?.error?.message || 'Failed to fetch categories').slice(0, 500)
+    console.error('GET /api/categories error:', msg)
+    return NextResponse.json({ error: msg, detail: 'Check Supabase env vars on Vercel' }, { status: 500 })
   }
 }
 
@@ -20,7 +21,8 @@ export async function POST(req: NextRequest) {
     const cat = await createCategory(body)
     return NextResponse.json(cat, { status: 201 })
   } catch (e: any) {
-    console.error('POST /api/categories error:', e?.message || e)
-    return NextResponse.json({ error: e?.message || 'Failed to create category' }, { status: 500 })
+    const msg = (e?.message || e?.error?.message || 'Failed to create category').slice(0, 500)
+    console.error('POST /api/categories error:', msg)
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 }

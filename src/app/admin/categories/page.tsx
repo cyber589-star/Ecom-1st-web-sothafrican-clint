@@ -21,9 +21,11 @@ export default function AdminCategoriesPage() {
       const res = await fetch('/api/categories')
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `HTTP ${res.status}`) }
       const data = await res.json()
-      setCategoryList(data || [])
-    } catch (e: any) { toast.error('Failed to load categories: ' + (e?.message || 'network error')) }
-    finally { setLoading(false) }
+      setCategoryList(Array.isArray(data) ? data : [])
+    } catch (e: any) {
+      const m = (e?.message || 'network error').replace(/<[^>]+>/g, '').slice(0, 200)
+      toast.error('Failed to load categories: ' + m)
+    } finally { setLoading(false) }
   }
   useEffect(() => { load() }, [])
 
@@ -32,7 +34,10 @@ export default function AdminCategoriesPage() {
       const res = await fetch(`/api/categories/${id}`, { method: 'DELETE' })
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `HTTP ${res.status}`) }
       setCategoryList(prev => prev.filter(c => c.id !== id)); toast.success('Category deleted')
-    } catch (e: any) { toast.error('Delete failed: ' + (e?.message || 'network error')) }
+    } catch (e: any) {
+      const m = (e?.message || 'network error').replace(/<[^>]+>/g, '').slice(0, 200)
+      toast.error('Delete failed: ' + m)
+    }
   }
 
   const openAdd = () => { setForm(emptyForm); setEditingId(null); setShowModal(true) }

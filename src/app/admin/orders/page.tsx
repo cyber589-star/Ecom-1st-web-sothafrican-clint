@@ -15,11 +15,13 @@ export default function AdminOrdersPage() {
   const load = async () => {
     try {
       const res = await fetch('/api/orders')
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `HTTP ${res.status}`) }
       const data = await res.json()
-      setOrderList(data || [])
-    } catch (e: any) { toast.error('Failed to load orders: ' + (e?.message || 'network error')) }
-    finally { setLoading(false) }
+      setOrderList(Array.isArray(data) ? data : [])
+    } catch (e: any) {
+      const m = (e?.message || 'network error').replace(/<[^>]+>/g, '').slice(0, 200)
+      toast.error('Failed to load orders: ' + m)
+    } finally { setLoading(false) }
   }
   useEffect(() => { load() }, [])
 

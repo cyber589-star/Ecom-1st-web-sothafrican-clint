@@ -6,8 +6,9 @@ export async function GET() {
     const orders = await listOrders()
     return NextResponse.json(orders, { headers: { 'Cache-Control': 'no-store, max-age=0' } })
   } catch (e: any) {
-    console.error('GET /api/orders error:', e?.message || e)
-    return NextResponse.json({ error: e?.message || 'Failed to fetch orders' }, { status: 500 })
+    const msg = (e?.message || e?.error?.message || 'Failed to fetch orders').slice(0, 500)
+    console.error('GET /api/orders error:', msg)
+    return NextResponse.json({ error: msg, detail: 'Check Supabase env vars on Vercel' }, { status: 500 })
   }
 }
 
@@ -20,7 +21,8 @@ export async function POST(req: NextRequest) {
     const order = await createOrder(body)
     return NextResponse.json(order, { status: 201 })
   } catch (e: any) {
-    console.error('POST /api/orders error:', e?.message || e)
-    return NextResponse.json({ error: e?.message || 'Failed to create order' }, { status: 500 })
+    const msg = (e?.message || e?.error?.message || 'Failed to create order').slice(0, 500)
+    console.error('POST /api/orders error:', msg)
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 }

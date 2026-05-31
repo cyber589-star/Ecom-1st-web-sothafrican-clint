@@ -33,9 +33,11 @@ export default function AdminProductsPage() {
       const res = await fetch('/api/products')
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `HTTP ${res.status}`) }
       const data = await res.json()
-      setProductList(data || [])
-    } catch (e: any) { toast.error('Failed to load products: ' + (e?.message || 'network error')) }
-    finally { setLoading(false) }
+      setProductList(Array.isArray(data) ? data : [])
+    } catch (e: any) {
+      const m = (e?.message || 'network error').replace(/<[^>]+>/g, '').slice(0, 200)
+      toast.error('Failed to load products: ' + m)
+    } finally { setLoading(false) }
   }
   useEffect(() => { load() }, [])
 
