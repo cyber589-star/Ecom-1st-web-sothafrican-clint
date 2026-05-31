@@ -37,7 +37,8 @@ export async function searchProductsAPI(query: string) {
 
 export async function createProduct(product: any) {
   const slug = product.slug || toSlug(product.name) + '-' + Date.now()
-  const { data, error } = await getSupabaseAdmin().from('products').insert({ ...product, slug }).select().single()
+  const id = product.id || String(Date.now()) + '-' + Math.random().toString(36).slice(2, 6)
+  const { data, error } = await getSupabaseAdmin().from('products').insert({ ...product, id, slug }).select().single()
   if (error) throw error
   return data
 }
@@ -68,7 +69,8 @@ export async function getCategory(id: string) {
 
 export async function createCategory(category: any) {
   const slug = category.slug || toSlug(category.name) + '-' + Date.now()
-  const { data, error } = await getSupabaseAdmin().from('categories').insert({ ...category, slug }).select().single()
+  const id = category.id || slug
+  const { data, error } = await getSupabaseAdmin().from('categories').insert({ ...category, id, slug }).select().single()
   if (error) throw error
   return data
 }

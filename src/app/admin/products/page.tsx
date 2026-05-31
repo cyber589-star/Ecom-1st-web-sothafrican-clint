@@ -69,7 +69,7 @@ export default function AdminProductsPage() {
   }
 
   const handleSubmit = async () => {
-    if (!form.name || !form.price || !form.category) { toast.error('Name, price, and category are required'); return }
+    if (!form.name || !form.price) { toast.error('Name and price are required'); return }
     setSaving(true)
     const tags = form.tags ? form.tags.split(',').map(s => s.trim()).filter(Boolean) : []
     const images = form.images ? form.images.split('\n').map(s => s.trim()).filter(Boolean) : ['https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=80']
@@ -79,8 +79,8 @@ export default function AdminProductsPage() {
       price: parseFloat(form.price),
       comparePrice: form.comparePrice ? parseFloat(form.comparePrice) : null,
       images, tags,
-      category: form.category,
-      categorySlug: form.category.toLowerCase().replace(/\s+/g, '-'),
+      category: form.category || 'Uncategorized',
+      categorySlug: form.category ? form.category.toLowerCase().replace(/\s+/g, '-') : 'uncategorized',
       rating: parseFloat(form.rating) || 5,
       reviews: parseInt(form.reviews) || 0,
       featured: form.featured, inStock: form.inStock,
@@ -172,12 +172,21 @@ export default function AdminProductsPage() {
                   <td className="p-3 text-amber-700 font-semibold">{formatZAR(product.price)}</td>
                   <td className="p-3 text-gray-500">{product.rating}</td>
                   <td className="p-3">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${product.inStock ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                    <button onClick={async () => { try { const r = await fetch(`/api/products/${product.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ inStock: !product.inStock }) }); if (!r.ok) throw Error(); setProductList(prev => prev.map(p => p.id === product.id ? { ...p, inStock: !p.inStock } : p)); toast.success('Stock updated') } catch { toast.error('Failed to update') } }}
+                      className={`text-[10px] px-2 py-0.5 rounded-full font-medium cursor-pointer transition-all ${
+                        product.inStock ? 'bg-emerald-100 text-emerald-700 hover:bg-red-100 hover:text-red-700' : 'bg-red-100 text-red-700 hover:bg-emerald-100 hover:text-emerald-700'
+                      }`}>
                       {product.inStock ? 'In Stock' : 'Out of Stock'}
-                    </span>
+                    </button>
                   </td>
                   <td className="p-3 text-right">
                     <div className="flex items-center justify-end gap-0.5">
+                      <button onClick={async () => { try { const r = await fetch(`/api/products/${product.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ featured: !product.featured }) }); if (!r.ok) throw Error(); setProductList(prev => prev.map(p => p.id === product.id ? { ...p, featured: !p.featured } : p)); toast.success('Featured updated') } catch { toast.error('Failed to update') } }}
+                        className={`p-1.5 rounded transition-all ${
+                          product.featured ? 'text-amber-600 bg-amber-50 hover:bg-amber-100' : 'text-gray-400 hover:text-amber-600 hover:bg-amber-50'
+                        }`} title={product.featured ? 'Remove featured' : 'Mark as featured'}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill={product.featured ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                      </button>
                       <button onClick={() => openEdit(product)} className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded"><Edit size={13} /></button>
                       <button onClick={() => handleDelete(product.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"><Trash2 size={13} /></button>
                     </div>
@@ -203,8 +212,8 @@ export default function AdminProductsPage() {
               <div><label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Slug</label>
                 <input placeholder="product-slug" value={form.slug} onChange={e => setForm({...form, slug: e.target.value})}
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400" /></div>
-              <div><label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Category *</label>
-                <input placeholder="Phone Accessories" value={form.category} onChange={e => setForm({...form, category: e.target.value, categorySlug: e.target.value.toLowerCase().replace(/\s+/g, '-')})}
+              <div><label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Category (optional)</label>
+                <input placeholder="e.g. Phone Accessories" value={form.category} onChange={e => setForm({...form, category: e.target.value, categorySlug: e.target.value.toLowerCase().replace(/\s+/g, '-')})}
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400" /></div>
               <div><label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Price (ZAR) *</label>
                 <input placeholder="0.00" type="number" step="0.01" min="0" value={form.price} onChange={e => setForm({...form, price: e.target.value})}
