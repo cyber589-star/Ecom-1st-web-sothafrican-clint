@@ -59,11 +59,11 @@ export default function AdminProductsPage() {
   const openEdit = (product: any) => {
     setForm({
       name: product.name, slug: product.slug, description: product.description,
-      price: String(product.price), comparePrice: product.comparePrice ? String(product.comparePrice) : '',
-      images: (product.images || []).join('\n'), category: product.category || product.categoryId || '',
-      categorySlug: product.categorySlug || '', tags: (product.tags || []).join(', '),
+      price: String(product.price), comparePrice: product.compareprice ? String(product.compareprice) : '',
+      images: (product.images || []).join('\n'), category: product.categoryid || product.category || '',
+      categorySlug: product.categoryslug || product.categorySlug || '', tags: (product.tags || []).join(', '),
       rating: String(product.rating || 5), reviews: String(product.reviews || 0),
-      inStock: product.inStock !== false, featured: product.featured || false,
+      inStock: product.instock ?? product.inStock ?? true, featured: product.featured || false,
     })
     setEditingId(product.id); setShowModal(true)
   }
@@ -74,16 +74,25 @@ export default function AdminProductsPage() {
     const tags = form.tags ? form.tags.split(',').map(s => s.trim()).filter(Boolean) : []
     const images = form.images ? form.images.split('\n').map(s => s.trim()).filter(Boolean) : ['https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=80']
     const slug = form.slug || form.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Date.now()
+    const p = parseFloat(form.price)
+    const cp = form.comparePrice ? parseFloat(form.comparePrice) : null
+    const cat = form.category || ''
+    const catSlug = cat ? cat.toLowerCase().replace(/\s+/g, '-') : ''
     const payload = {
       name: form.name, slug, description: form.description,
-      price: parseFloat(form.price),
-      comparePrice: form.comparePrice ? parseFloat(form.comparePrice) : null,
+      price: p,
+      compareprice: cp,
+      comparePrice: cp,
       images, tags,
-      category: form.category || 'Uncategorized',
-      categorySlug: form.category ? form.category.toLowerCase().replace(/\s+/g, '-') : 'uncategorized',
+      categoryid: cat,
+      category: cat,
+      categoryslug: catSlug,
+      categorySlug: catSlug,
       rating: parseFloat(form.rating) || 5,
       reviews: parseInt(form.reviews) || 0,
-      featured: form.featured, inStock: form.inStock,
+      featured: form.featured,
+      instock: form.inStock,
+      inStock: form.inStock,
     }
 
     try {
@@ -172,16 +181,16 @@ export default function AdminProductsPage() {
                   <td className="p-3 text-amber-700 font-semibold">{formatZAR(product.price)}</td>
                   <td className="p-3 text-gray-500">{product.rating}</td>
                   <td className="p-3">
-                    <button onClick={async () => { try { const r = await fetch(`/api/products/${product.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ inStock: !product.inStock }) }); if (!r.ok) throw Error(); setProductList(prev => prev.map(p => p.id === product.id ? { ...p, inStock: !p.inStock } : p)); toast.success('Stock updated') } catch { toast.error('Failed to update') } }}
+                    <button onClick={async () => { try { const cur = product.instock ?? product.inStock; const r = await fetch(`/api/products/${product.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ instock: !cur, inStock: !cur }) }); if (!r.ok) throw Error(); setProductList(prev => prev.map(p => p.id === product.id ? { ...p, instock: !cur, inStock: !cur } : p)); toast.success('Stock updated') } catch { toast.error('Failed to update') } }}
                       className={`text-[10px] px-2 py-0.5 rounded-full font-medium cursor-pointer transition-all ${
-                        product.inStock ? 'bg-emerald-100 text-emerald-700 hover:bg-red-100 hover:text-red-700' : 'bg-red-100 text-red-700 hover:bg-emerald-100 hover:text-emerald-700'
+                        (product.instock ?? product.inStock) ? 'bg-emerald-100 text-emerald-700 hover:bg-red-100 hover:text-red-700' : 'bg-red-100 text-red-700 hover:bg-emerald-100 hover:text-emerald-700'
                       }`}>
-                      {product.inStock ? 'In Stock' : 'Out of Stock'}
+                      {(product.instock ?? product.inStock) ? 'In Stock' : 'Out of Stock'}
                     </button>
                   </td>
                   <td className="p-3 text-right">
                     <div className="flex items-center justify-end gap-0.5">
-                      <button onClick={async () => { try { const r = await fetch(`/api/products/${product.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ featured: !product.featured }) }); if (!r.ok) throw Error(); setProductList(prev => prev.map(p => p.id === product.id ? { ...p, featured: !p.featured } : p)); toast.success('Featured updated') } catch { toast.error('Failed to update') } }}
+                      <button onClick={async () => { try { const cur = product.featured; const r = await fetch(`/api/products/${product.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ featured: !cur }) }); if (!r.ok) throw Error(); setProductList(prev => prev.map(p => p.id === product.id ? { ...p, featured: !cur } : p)); toast.success('Featured updated') } catch { toast.error('Failed to update') } }}
                         className={`p-1.5 rounded transition-all ${
                           product.featured ? 'text-amber-600 bg-amber-50 hover:bg-amber-100' : 'text-gray-400 hover:text-amber-600 hover:bg-amber-50'
                         }`} title={product.featured ? 'Remove featured' : 'Mark as featured'}>
@@ -219,7 +228,7 @@ export default function AdminProductsPage() {
                 <input placeholder="0.00" type="number" step="0.01" min="0" value={form.price} onChange={e => setForm({...form, price: e.target.value})}
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400" />
                 {form.price && <p className="text-[10px] text-gray-400 mt-1">Preview: <span className="text-amber-700 font-semibold">{formatZAR(form.price)}</span></p>}</div>
-              <div><label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Compare Price (optional)</label>
+              <div><label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Original Price (optional)</label>
                 <input placeholder="0.00" type="number" step="0.01" min="0" value={form.comparePrice} onChange={e => setForm({...form, comparePrice: e.target.value})}
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400" /></div>
               <div><label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Rating</label>
@@ -241,13 +250,19 @@ export default function AdminProductsPage() {
                 </div>
                 <textarea placeholder="Image URLs (one per line)" rows={2} value={form.images} onChange={e => setForm({...form, images: e.target.value})}
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3.5 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-400 resize-none" /></div>
-              <label className="flex items-center gap-2 text-xs text-gray-600">
-                <input type="checkbox" checked={form.inStock} onChange={e => setForm({...form, inStock: e.target.checked})}
-                  className="rounded border-gray-300 text-amber-600 focus:ring-amber-500" /> In Stock
+              <label className="flex items-center justify-between text-xs text-gray-600 bg-gray-50 rounded-lg px-3.5 py-2.5 border border-gray-200 cursor-pointer hover:border-amber-300 transition-all">
+                <span className="font-medium">In Stock</span>
+                <div className={`relative w-9 h-5 rounded-full transition-colors ${form.inStock ? 'bg-emerald-500' : 'bg-gray-300'}`}>
+                  <input type="checkbox" checked={form.inStock} onChange={e => setForm({...form, inStock: e.target.checked})} className="sr-only" />
+                  <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${form.inStock ? 'translate-x-4' : ''}`} />
+                </div>
               </label>
-              <label className="flex items-center gap-2 text-xs text-gray-600">
-                <input type="checkbox" checked={form.featured} onChange={e => setForm({...form, featured: e.target.checked})}
-                  className="rounded border-gray-300 text-amber-600 focus:ring-amber-500" /> Featured
+              <label className="flex items-center justify-between text-xs text-gray-600 bg-gray-50 rounded-lg px-3.5 py-2.5 border border-gray-200 cursor-pointer hover:border-amber-300 transition-all">
+                <span className="font-medium">Featured</span>
+                <div className={`relative w-9 h-5 rounded-full transition-colors ${form.featured ? 'bg-amber-500' : 'bg-gray-300'}`}>
+                  <input type="checkbox" checked={form.featured} onChange={e => setForm({...form, featured: e.target.checked})} className="sr-only" />
+                  <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${form.featured ? 'translate-x-4' : ''}`} />
+                </div>
               </label>
             </div>
             <div className="flex gap-2.5 mt-6 pt-4 border-t border-gray-100">
