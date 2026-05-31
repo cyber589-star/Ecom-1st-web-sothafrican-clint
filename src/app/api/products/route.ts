@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { listProducts, createProduct, getProductBySlug, searchProductsAPI } from '@/lib/supabase-service'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
@@ -8,15 +10,15 @@ export async function GET(req: NextRequest) {
     if (slug) {
       const p = await getProductBySlug(slug)
       if (!p) return NextResponse.json({ error: 'Product not found', slug }, { status: 404 })
-      return NextResponse.json(p, { headers: { 'Cache-Control': 'public, max-age=30, s-maxage=60' } })
+      return NextResponse.json(p, { headers: { 'Cache-Control': 'no-store', 'CDN-Cache-Control': 'no-store' } })
     }
     const search = searchParams.get('search')
     if (search) {
       const results = await searchProductsAPI(search)
-      return NextResponse.json(results, { headers: { 'Cache-Control': 'public, max-age=10, s-maxage=30' } })
+      return NextResponse.json(results, { headers: { 'Cache-Control': 'no-store', 'CDN-Cache-Control': 'no-store' } })
     }
     const products = await listProducts()
-    return NextResponse.json(products, { headers: { 'Cache-Control': 'no-cache, max-age=10' } })
+    return NextResponse.json(products, { headers: { 'Cache-Control': 'no-store, max-age=0', 'CDN-Cache-Control': 'no-store' } })
   } catch (e: any) {
     const msg = (e?.message || e?.error?.message || 'Failed to fetch products').slice(0, 500)
     console.error('GET /api/products error:', msg)

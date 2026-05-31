@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { listCategories, createCategory } from '@/lib/supabase-service'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     const categories = await listCategories()
-    return NextResponse.json(categories, { headers: { 'Cache-Control': 'no-cache, max-age=10' } })
+    return NextResponse.json(categories, { headers: { 'Cache-Control': 'no-store', 'CDN-Cache-Control': 'no-store' } })
   } catch (e: any) {
     const msg = (e?.message || e?.error?.message || 'Failed to fetch categories').slice(0, 500)
     console.error('GET /api/categories error:', msg)

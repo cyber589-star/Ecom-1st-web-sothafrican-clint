@@ -1,12 +1,14 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { ArrowRight, Sparkles, Package } from 'lucide-react'
-import dynamic from 'next/dynamic'
-const HeroSection = dynamic(() => import('@/components/HeroSection'), { ssr: true })
+import dynamicImport from 'next/dynamic'
+const HeroSection = dynamicImport(() => import('@/components/HeroSection'), { ssr: true })
 import ProductCard from '@/components/products/ProductCard'
 import { fetchFeaturedProducts, fetchNewArrivals, fetchProducts } from '@/data/products'
 import { fetchCategories } from '@/data/categories'

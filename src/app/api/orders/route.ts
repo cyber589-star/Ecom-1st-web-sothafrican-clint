@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { listOrders, createOrder, updateOrder, deleteOrder } from '@/lib/supabase-service'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     const orders = await listOrders()
-    return NextResponse.json(orders, { headers: { 'Cache-Control': 'no-store, max-age=0' } })
+    return NextResponse.json(orders, { headers: { 'Cache-Control': 'no-store', 'CDN-Cache-Control': 'no-store' } })
   } catch (e: any) {
     const msg = (e?.message || e?.error?.message || 'Failed to fetch orders').slice(0, 500)
     console.error('GET /api/orders error:', msg)
