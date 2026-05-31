@@ -12,13 +12,14 @@ const AdminContext = createContext<AdminContextType | undefined>(undefined)
 
 export function AdminProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setAuthenticated] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [ready, setReady] = useState(false)
+  const pathname = typeof window !== 'undefined' ? window.location.pathname : ''
 
   useEffect(() => {
     fetch('/api/admin/check').then(r => r.json()).then(d => {
       setAuthenticated(d.authenticated || false)
-      setLoading(false)
-    }).catch(() => setLoading(false))
+      setReady(true)
+    }).catch(() => setReady(true))
   }, [])
 
   const login = async (email: string, password: string) => {
@@ -40,7 +41,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     setAuthenticated(false)
   }
 
-  if (loading) return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="w-8 h-8 border-2 border-amber-200 border-t-amber-600 rounded-full animate-spin" /></div>
+  if (!ready && pathname.startsWith('/admin')) {
+    return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="w-8 h-8 border-2 border-amber-200 border-t-amber-600 rounded-full animate-spin" /></div>
+  }
 
   return (
     <AdminContext.Provider value={{ isAuthenticated, login, logout }}>

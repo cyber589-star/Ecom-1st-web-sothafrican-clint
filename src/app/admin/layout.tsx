@@ -8,7 +8,6 @@ import {
   Search, Bell, Settings, LogOut, Percent, Sparkles,
 } from 'lucide-react'
 import { useAdmin } from '@/context/AdminContext'
-import { AdminProvider } from '@/context/AdminContext'
 import toast from 'react-hot-toast'
 
 const sidebarLinks = [
@@ -117,9 +116,5 @@ function AdminDashboardShell({ children, logout, pathname }: { children: React.R
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <AdminProvider>
-      <AdminLayoutContent>{children}</AdminLayoutContent>
-    </AdminProvider>
-  )
+  return <AdminLayoutContent>{children}</AdminLayoutContent>
 }

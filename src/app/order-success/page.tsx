@@ -7,14 +7,16 @@ import { useState, useEffect } from 'react'
 
 export default function OrderSuccessPage() {
   const [order, setOrder] = useState<any>(null)
+  const [paypalEmail, setPaypalEmail] = useState('makharietja@gmail.com')
 
   useEffect(() => {
     const saved = localStorage.getItem('last_order')
     if (saved) setOrder(JSON.parse(saved))
+    const email = localStorage.getItem('paypal_email')
+    if (email) setPaypalEmail(email)
   }, [])
 
   const isPayPal = order?.paymentMethod === 'PayPal'
-  const paypalEmail = localStorage.getItem('paypal_email') || 'makharietja@gmail.com'
 
   return (
     <main className="min-h-screen bg-white pt-20 sm:pt-24 pb-12 sm:pb-16 flex items-center justify-center">
