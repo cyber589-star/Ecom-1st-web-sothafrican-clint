@@ -33,10 +33,11 @@ export default function CheckoutPage() {
       const paymentMethodLabel = paymentMethod === 'paypal' ? 'PayPal' : 'Cash on Delivery'
       const orderData = {
         id: 'ORD-' + Date.now(), items: items.length, itemCount: items.reduce((s, i) => s + i.quantity, 0),
-        customer: formData.name, customerName: formData.name, email: formData.email,
+        customer: formData.name, customerName: formData.name, email: formData.email, phone: formData.phone,
         total: formatZAR(totalWithTax), status: 'Pending',
         paymentMethod: paymentMethodLabel, paymentStatus: 'pending',
-        shippingAddress: { address: formData.address, city: formData.city, state: formData.state, zip: formData.zip },
+        shippingAddress: { address: formData.address, city: formData.city, state: formData.state, zip: formData.zip, phone: formData.phone },
+        address: formData.address, city: formData.city,
         itemsDetail: items.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity, image: i.image })),
         createdAt: new Date().toISOString(),
       }

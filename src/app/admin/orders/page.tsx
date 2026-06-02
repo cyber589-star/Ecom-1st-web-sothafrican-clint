@@ -156,7 +156,7 @@ export default function AdminOrdersPage() {
                 <div><p className="text-gray-400">Date</p><p className="text-gray-900">{new Date(selectedOrder.createdAt).toLocaleDateString()}</p></div>
                 <div><p className="text-gray-400">Customer</p><p className="text-gray-900">{selectedOrder.customerName}</p></div>
                 <div><p className="text-gray-400">Email</p><p className="text-gray-900">{selectedOrder.email}</p></div>
-                <div><p className="text-gray-400">Phone</p><p className="text-gray-900">{selectedOrder.phone || '-'}</p></div>
+                <div><p className="text-gray-400">Phone</p><p className="text-gray-900">{selectedOrder.phone || selectedOrder.shippingAddress?.phone || '-'}</p></div>
                 <div><p className="text-gray-400">Payment</p><p className="text-gray-900">{selectedOrder.paymentMethod}</p></div>
               </div>
               <div className="border-t border-gray-100 pt-3"><p className="text-gray-400 mb-1">Shipping Address</p>

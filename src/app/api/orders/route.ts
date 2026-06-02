@@ -17,8 +17,8 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    if (!body.customerName || !body.email) {
-      return NextResponse.json({ error: 'Customer name and email are required' }, { status: 400 })
+    if (!body.customerName || !body.email || !body.phone || !body.address) {
+      return NextResponse.json({ error: 'Customer name, email, phone, and address are required' }, { status: 400 })
     }
     const order = await createOrder(body)
     return NextResponse.json(order, { status: 201 })
